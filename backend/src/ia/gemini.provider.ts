@@ -762,7 +762,10 @@ ser explorado de maneira respeitosa e não indutiva.
  */
 const QUESTIONS_PROFILE: GenerationProfile = {
   temperature: 0.2,
-  maxOutputTokens: 2_000,
+  // O orçamento inclui os tokens internos de raciocínio do Gemini 3.1.
+  // Com 2.000 tokens, algumas respostas eram encerradas antes de fechar o
+  // JSON das cinco perguntas (finishReason MAX_TOKENS).
+  maxOutputTokens: 4_096,
   thinkingLevel: ThinkingLevel.LOW,
 };
 
