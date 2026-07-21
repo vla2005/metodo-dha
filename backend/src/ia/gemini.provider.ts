@@ -764,21 +764,18 @@ const QUESTIONS_PROFILE: GenerationProfile = {
   temperature: 0.2,
   maxOutputTokens: 2_000,
   thinkingLevel: ThinkingLevel.LOW,
-  frequencyPenalty: 0.1,
 };
 
 const ANALYSIS_PROFILE: GenerationProfile = {
   temperature: 0.15,
   maxOutputTokens: 4_096,
   thinkingLevel: ThinkingLevel.MEDIUM,
-  frequencyPenalty: 0.15,
 };
 
 const AYA_PROFILE: GenerationProfile = {
   temperature: 0.25,
   maxOutputTokens: 1_800,
   thinkingLevel: ThinkingLevel.LOW,
-  frequencyPenalty: 0.1,
 };
 
 type FinishReasonFailure = {
@@ -1593,6 +1590,17 @@ export class GeminiProvider implements ProvedorIa {
     ) {
       return new IaProviderError(
         'QUOTA_EXHAUSTED',
+        false,
+      );
+    }
+
+    if (
+      /(?:"code"\s*:\s*400|\b400\b.*\bINVALID_ARGUMENT\b|\bINVALID_ARGUMENT\b)/i.test(
+        message,
+      )
+    ) {
+      return new IaProviderError(
+        'INVALID_REQUEST',
         false,
       );
     }
