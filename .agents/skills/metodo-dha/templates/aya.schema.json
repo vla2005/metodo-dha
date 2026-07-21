@@ -1,0 +1,140 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "AnaliseDha",
+  "type": "object",
+  "required": [
+    "resumoCircunstancia",
+    "reflexoesEtapas",
+    "sinteseSequencia",
+    "incertezas",
+    "proximasReflexoes",
+    "sinalizacaoSeguranca",
+    "aviso"
+  ],
+  "properties": {
+    "resumoCircunstancia": {
+      "type": "string",
+      "maxLength": 1800
+    },
+    "reflexoesEtapas": {
+      "type": "array",
+      "minItems": 5,
+      "maxItems": 5,
+      "items": {
+        "type": "object",
+        "required": [
+          "numeroEtapa",
+          "nomeEtapa",
+          "conteudoRelatado",
+          "observacaoObjetiva",
+          "hipoteseReflexiva",
+          "fundamentacao",
+          "grauCerteza",
+          "perguntaAberta"
+        ],
+        "properties": {
+          "numeroEtapa": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 5
+          },
+          "nomeEtapa": {
+            "type": "string",
+            "enum": [
+              "Circunstância percebida",
+              "História",
+              "Condicionamentos",
+              "Consciência",
+              "Escolha consciente"
+            ]
+          },
+          "conteudoRelatado": {
+            "type": "string",
+            "maxLength": 900
+          },
+          "observacaoObjetiva": {
+            "type": "string",
+            "maxLength": 700
+          },
+          "hipoteseReflexiva": {
+            "type": "string",
+            "maxLength": 1500
+          },
+          "fundamentacao": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 4,
+            "items": {
+              "type": "string",
+              "maxLength": 500
+            }
+          },
+          "grauCerteza": {
+            "type": "string",
+            "enum": [
+              "hipotese",
+              "possibilidade",
+              "baseado_em_fala_explicita"
+            ]
+          },
+          "leituraAlternativa": {
+            "type": "string",
+            "maxLength": 900
+          },
+          "perguntaAberta": {
+            "type": "string",
+            "maxLength": 600
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "sinteseSequencia": {
+      "type": "string",
+      "maxLength": 3000
+    },
+    "incertezas": {
+      "type": "array",
+      "maxItems": 6,
+      "items": {
+        "type": "string",
+        "maxLength": 600
+      }
+    },
+    "proximasReflexoes": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 5,
+      "items": {
+        "type": "string",
+        "maxLength": 600
+      }
+    },
+    "sinalizacaoSeguranca": {
+      "type": "object",
+      "required": [
+        "requerPausa",
+        "necessitaRevisaoProfissional",
+        "motivo"
+      ],
+      "properties": {
+        "requerPausa": {
+          "type": "boolean"
+        },
+        "necessitaRevisaoProfissional": {
+          "type": "boolean"
+        },
+        "motivo": {
+          "type": "string",
+          "maxLength": 1000
+        }
+      },
+      "additionalProperties": false
+    },
+    "aviso": {
+      "type": "string",
+      "maxLength": 900
+    }
+  },
+  "additionalProperties": false
+}

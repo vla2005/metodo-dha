@@ -1,0 +1,10 @@
+{
+  "versao": "dha-2026-v1",
+  "temas": [
+    { "id": "relacionamentos", "nome": "Relacionamentos", "descricao": "Relações afetivas, familiares ou sociais.", "ativo": true, "ordem": 1 },
+    { "id": "trabalho", "nome": "Trabalho", "descricao": "Vivências, escolhas e desafios profissionais.", "ativo": true, "ordem": 2 },
+    { "id": "mudancas", "nome": "Mudanças", "descricao": "Transições e novos ciclos.", "ativo": true, "ordem": 3 },
+    { "id": "autoconhecimento", "nome": "Autoconhecimento", "descricao": "Questões pessoais que pedem observação.", "ativo": true, "ordem": 4 },
+    { "id": "outro", "nome": "Outro", "descricao": "Tema definido pela própria pessoa.", "ativo": true, "ordem": 5 }
+  ]
+}

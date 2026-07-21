@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <defs>
+    <linearGradient id="g" x1="9" y1="55" x2="54" y2="8" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#6f4319"/>
+      <stop offset=".52" stop-color="#ead79b"/>
+      <stop offset="1" stop-color="#9b6b2c"/>
+    </linearGradient>
+  </defs>
+  <rect width="64" height="64" rx="14" fill="#24170d"/>
+  <path d="M47 17A22 22 0 1 0 50 40M17 25c9-8 20-10 29-5M15 34c10-9 23-11 34-5M20 44c9-5 18-5 27-1M24 19c4 10 3 20-3 29M34 14c3 8 2 16-2 23M38 35c5-5 10-11 14-17" fill="none" stroke="url(#g)" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="m48 18 7-3-2 7" fill="none" stroke="url(#g)" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="17" cy="34" r="2.2" fill="url(#g)"/><circle cx="24" cy="25" r="2" fill="url(#g)"/><circle cx="32" cy="37" r="2.1" fill="url(#g)"/><circle cx="43" cy="28" r="2" fill="url(#g)"/>
+  <text x="32" y="43" text-anchor="middle" fill="url(#g)" font-family="Arial,sans-serif" font-size="13" font-weight="700">DHA</text>
+</svg>
