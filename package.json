@@ -8,8 +8,8 @@
     "build": "npm run build -w backend && npm run build -w frontend",
     "test": "npm test -w backend",
     "lint": "npm run lint -w backend && npm run lint -w frontend",
-    "docker:up": "docker compose up --build",
-    "docker:down": "docker compose down",
-    "docker:logs": "docker compose logs -f"
+    "docker:up": "docker compose -f docker-compose.local.yml up --build",
+    "docker:down": "docker compose -f docker-compose.local.yml down",
+    "docker:logs": "docker compose -f docker-compose.local.yml logs -f"
   }
 }

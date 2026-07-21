@@ -6,8 +6,8 @@ services:
     restart: unless-stopped
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-metodo_dha}
-      POSTGRES_USER: ${POSTGRES_USER:-postgres}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_USER: ${POSTGRES_USER:-metodo_dha}
+      POSTGRES_PASSWORD: ${SERVICE_PASSWORD_POSTGRES}
     volumes:
       - dha_postgres:/var/lib/postgresql/data
     healthcheck:
@@ -15,44 +15,44 @@ services:
       interval: 5s
       timeout: 3s
       retries: 20
-      start_period: 5s
+      start_period: 10s
 
   backend:
     build:
       context: .
       dockerfile: backend/Dockerfile
-    env_file:
-      - path: ./backend/.env
-        required: false
     restart: unless-stopped
     init: true
+    expose:
+      - "3000"
     environment:
       NODE_ENV: production
       PORT: 3000
       API_PREFIX: api
-      FRONTEND_ORIGINS: ${FRONTEND_ORIGINS:-http://localhost:8080}
-      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-metodo_dha}
-      DATABASE_POOL_MAX: ${DATABASE_POOL_MAX:-10}
+      FRONTEND_ORIGINS: ${APP_URL:?}
+      DATABASE_URL: postgresql://${POSTGRES_USER:-metodo_dha}:${SERVICE_PASSWORD_POSTGRES}@postgres:5432/${POSTGRES_DB:-metodo_dha}
+      DATABASE_POOL_MAX: ${DATABASE_POOL_MAX:-5}
       DATABASE_AUTO_SCHEMA: "true"
       DATABASE_SCHEMA_PATH: /app/sql/schema.sql
       CATALOG_DIR: /app/catalog
       CARD_IMAGES_DIR: /app/imagens
       PUBLIC_SESSION_COOKIE_NAME: dha_session
-      PUBLIC_SESSION_TTL_HOURS: 72
-      PUBLIC_SESSION_COOKIE_SECURE: ${PUBLIC_SESSION_COOKIE_SECURE:-false}
-      PUBLIC_SESSION_COOKIE_SAME_SITE: ${PUBLIC_SESSION_COOKIE_SAME_SITE:-lax}
-      AI_PROVIDER: ${AI_PROVIDER:-auto}
+      PUBLIC_SESSION_TTL_HOURS: ${PUBLIC_SESSION_TTL_HOURS:-72}
+      PUBLIC_SESSION_COOKIE_SECURE: "true"
+      PUBLIC_SESSION_COOKIE_SAME_SITE: lax
+      AI_PROVIDER: ${AI_PROVIDER:-gemini}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:?}
       GEMINI_MODEL: ${GEMINI_MODEL:-gemini-3.1-flash-lite}
-      GEMINI_DAILY_HARD_LIMIT: 500
-      GEMINI_DAILY_OPERATIONAL_LIMIT: 450
-      GEMINI_TIMEOUT_MS: 30000
-      GEMINI_MAX_RETRIES: 1
-      GEMINI_MAX_OUTPUT_TOKENS: 4096
-      GEMINI_PROMPT_VERSION: questions-v2
-      GEMINI_SCHEMA_VERSION: questions-v2
-      GEMINI_ANALYSIS_PROMPT_VERSION: analysis-v2
-      GEMINI_ANALYSIS_SCHEMA_VERSION: analysis-v2
-      LOG_LEVEL: info
+      GEMINI_DAILY_HARD_LIMIT: ${GEMINI_DAILY_HARD_LIMIT:-500}
+      GEMINI_DAILY_OPERATIONAL_LIMIT: ${GEMINI_DAILY_OPERATIONAL_LIMIT:-450}
+      GEMINI_TIMEOUT_MS: ${GEMINI_TIMEOUT_MS:-30000}
+      GEMINI_MAX_RETRIES: ${GEMINI_MAX_RETRIES:-1}
+      GEMINI_MAX_OUTPUT_TOKENS: ${GEMINI_MAX_OUTPUT_TOKENS:-4096}
+      GEMINI_PROMPT_VERSION: ${GEMINI_PROMPT_VERSION:-questions-v2}
+      GEMINI_SCHEMA_VERSION: ${GEMINI_SCHEMA_VERSION:-questions-v2}
+      GEMINI_ANALYSIS_PROMPT_VERSION: ${GEMINI_ANALYSIS_PROMPT_VERSION:-analysis-v2}
+      GEMINI_ANALYSIS_SCHEMA_VERSION: ${GEMINI_ANALYSIS_SCHEMA_VERSION:-analysis-v2}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
     depends_on:
       postgres:
         condition: service_healthy
@@ -70,8 +70,8 @@ services:
       args:
         VITE_API_URL: /api
     restart: unless-stopped
-    ports:
-      - "8080:80"
+    expose:
+      - "80"
     depends_on:
       backend:
         condition: service_healthy
@@ -80,6 +80,7 @@ services:
       interval: 10s
       timeout: 3s
       retries: 5
+      start_period: 10s
 
 volumes:
   dha_postgres:

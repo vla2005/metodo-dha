@@ -9,7 +9,7 @@ O fluxo atual é: identificação e consentimentos → tema e relato → cinco c
 Com o Docker Desktop aberto, execute na raiz:
 
 ```powershell
-docker compose up --build
+docker compose -f docker-compose.local.yml up --build
 ```
 
 Isso inicia PostgreSQL, backend e frontend de uma só vez. O backend cria o schema SQL automaticamente na primeira inicialização; não há ORM, geração de cliente ou comando de migration.
@@ -19,7 +19,7 @@ Sem `GEMINI_API_KEY`, perguntas e análise usam o modo local de demonstração. 
 ```powershell
 Copy-Item backend/.env.example backend/.env
 # preencha GEMINI_API_KEY em backend/.env
-docker compose up --build -d
+docker compose -f docker-compose.local.yml up --build -d
 ```
 
 Acesse:
@@ -31,13 +31,13 @@ Acesse:
 Para parar preservando o banco:
 
 ```powershell
-docker compose down
+docker compose -f docker-compose.local.yml down
 ```
 
 Para apagar definitivamente as jornadas locais e começar com um banco vazio:
 
 ```powershell
-docker compose down -v
+docker compose -f docker-compose.local.yml down -v
 ```
 
 ## Banco de dados sem ORM
@@ -76,7 +76,7 @@ Requisitos: Node.js 22+, npm e PostgreSQL 16+.
 npm install
 Copy-Item backend/.env.example backend/.env
 Copy-Item frontend/.env.example frontend/.env
-docker compose up -d postgres
+docker compose -f docker-compose.local.yml up -d postgres
 npm run dev:backend
 ```
 
@@ -90,11 +90,11 @@ A API aplica o schema automaticamente ao iniciar. Não é necessário executar s
 
 ## Deploy recomendado no Coolify
 
-O arquivo de produção é `docker-compose.coolify.yml`. Ele publica somente o frontend na porta interna 80; backend e PostgreSQL permanecem acessíveis apenas pela rede privada do stack. O frontend encaminha `/api` para o backend, portanto um único domínio atende todo o sistema.
+O arquivo principal `docker-compose.yml` é a configuração de produção para o Coolify. Ele publica somente o frontend na porta interna 80; backend e PostgreSQL permanecem acessíveis apenas pela rede privada do stack. O frontend encaminha `/api` para o backend, portanto um único domínio atende todo o sistema.
 
 1. Envie o repositório, incluindo `imagens/`, para um repositório Git privado.
 2. No Coolify, crie um recurso a partir do repositório e selecione o build pack **Docker Compose**.
-3. Use `Base Directory: /` e `Docker Compose Location: /docker-compose.coolify.yml`.
+3. Use `Base Directory: /` e `Docker Compose Location: /docker-compose.yml`.
 4. Configure no serviço `frontend` o domínio `https://metodo-dha.viktorware.com` apontando para a porta `80`.
 5. Não associe domínio aos serviços `backend` ou `postgres`.
 6. Na tela de variáveis, informe `APP_URL` e `GEMINI_API_KEY`. O Coolify pode gerar automaticamente `SERVICE_PASSWORD_POSTGRES`.
