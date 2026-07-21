@@ -47,6 +47,11 @@ export function App() {
   const [loading, setLoading] = useState(true);
   const [action, setAction] = useState<string | null>(null);
   const [error, setError] = useState('');
+  const journeyViewKey = journey
+    ? `${journey.status}:${journey.currentStep}`
+    : 'landing';
+
+  useScrollToTopOnChange(journeyViewKey, !loading);
 
   const restore = useCallback(async () => {
     try {
@@ -861,6 +866,8 @@ function Questionnaire({
     setDraft('');
   }, [currentQuestion?.id]);
 
+  useScrollToTopOnChange(currentQuestion?.id ?? 'questions-complete');
+
   const complete =
     snapshot.answersComplete ||
     snapshot.generationStatus === 'ANSWERS_COMPLETED' ||
@@ -1061,6 +1068,23 @@ function Questionnaire({
       <SequenceDetails journey={journey} />
     </motion.section>
   );
+}
+
+/**
+ * Reinicia a posição da página quando o conteúdo principal avança para outra
+ * tela lógica. O requestAnimationFrame garante que o novo conteúdo já tenha
+ * sido renderizado antes da rolagem, inclusive no Safari móvel.
+ */
+function useScrollToTopOnChange(value: string | undefined, enabled = true) {
+  useEffect(() => {
+    if (!enabled) return undefined;
+
+    const frame = window.requestAnimationFrame(() => {
+      window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+    });
+
+    return () => window.cancelAnimationFrame(frame);
+  }, [enabled, value]);
 }
 
 function QuestionsComplete({
