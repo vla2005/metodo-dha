@@ -88,6 +88,22 @@ npm run dev:frontend
 
 A API aplica o schema automaticamente ao iniciar. Não é necessário executar seed, pois os catálogos vêm dos arquivos JSON.
 
+## Deploy recomendado no Coolify
+
+O arquivo de produção é `docker-compose.coolify.yml`. Ele publica somente o frontend na porta interna 80; backend e PostgreSQL permanecem acessíveis apenas pela rede privada do stack. O frontend encaminha `/api` para o backend, portanto um único domínio atende todo o sistema.
+
+1. Envie o repositório, incluindo `imagens/`, para um repositório Git privado.
+2. No Coolify, crie um recurso a partir do repositório e selecione o build pack **Docker Compose**.
+3. Use `Base Directory: /` e `Docker Compose Location: /docker-compose.coolify.yml`.
+4. Configure no serviço `frontend` o domínio `https://metodo-dha.viktorware.com` apontando para a porta `80`.
+5. Não associe domínio aos serviços `backend` ou `postgres`.
+6. Na tela de variáveis, informe `APP_URL` e `GEMINI_API_KEY`. O Coolify pode gerar automaticamente `SERVICE_PASSWORD_POSTGRES`.
+7. Faça o deploy e valide `https://metodo-dha.viktorware.com/api/health`.
+
+As variáveis aceitas estão documentadas em `.env.coolify.example`. A chave Gemini e a senha do banco são apenas de runtime e nunca devem ser marcadas como variáveis de build ou incluídas no repositório.
+
+O volume nomeado `dha_postgres` preserva o banco entre deploys. Configure também um backup agendado do PostgreSQL para um destino externo compatível com S3 antes de usar dados reais.
+
 ## Deploy simples no cPanel
 
 No backend, configure uma aplicação Node.js 22 apontando para a pasta `backend`, com arquivo de inicialização `dist/main.js`.
