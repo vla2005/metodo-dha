@@ -138,7 +138,7 @@ export function FinalAnalysis({ journeyId }: FinalAnalysisProps) {
         className="mt-10 border border-danger/30 bg-paper p-6 shadow-card md:p-9"
         aria-labelledby="analysis-load-error-title"
       >
-        <span className="eyebrow text-danger">Análise final</span>
+        <span className="eyebrow text-danger">Análise expandida</span>
         <h2 id="analysis-load-error-title" className="mt-3 font-display text-3xl leading-tight md:text-4xl">
           Não foi possível verificar sua análise.
         </h2>
@@ -182,13 +182,15 @@ export function FinalAnalysis({ journeyId }: FinalAnalysisProps) {
             <SparkleIcon size={25} weight="light" aria-hidden="true" />
           </div>
           <p className="mt-7 text-[0.68rem] font-semibold uppercase tracking-[0.2em] text-gold-pale/65">
-            Análise final
+            Análise expandida
           </p>
           <h2 id="generate-analysis-title" className="mt-4 max-w-3xl font-display text-4xl font-light leading-[1.03] tracking-[-0.035em] md:text-6xl">
-            Reúna suas respostas em uma visão de conjunto.
+            Aprofunde sua reflexão em uma visão de conjunto.
           </h2>
           <p id="analysis-generation-description" className="mt-6 max-w-2xl text-base leading-7 text-paper/68 md:text-lg">
-            Uma única análise conectará o que você relatou, suas associações e as cinco etapas. O resultado apresenta possibilidades de reflexão, não conclusões sobre você.
+            Esta análise reúne sua circunstância inicial, as cinco combinações, as perguntas do
+            percurso e as respostas que você compartilhou. O resultado apresenta possibilidades de
+            reflexão, não conclusões sobre você.
           </p>
         </div>
 
@@ -206,11 +208,11 @@ export function FinalAnalysis({ journeyId }: FinalAnalysisProps) {
                 {generating ? (
                   <>
                     <CircleNotchIcon className={reducedMotion ? '' : 'animate-spin'} size={18} aria-hidden="true" />
-                    Preparando análise…
+                    AYA está integrando suas respostas…
                   </>
                 ) : (
                   <>
-                    {error ? 'Tentar gerar novamente' : 'Gerar minha análise final'}
+                    {error ? 'Tentar gerar novamente' : 'Aprofundar minha reflexão'}
                     <ArrowRightIcon size={18} weight="bold" aria-hidden="true" />
                   </>
                 )}
@@ -253,7 +255,7 @@ function AnalysisLoading({ reducedMotion }: { reducedMotion: boolean }) {
         <CircleNotchIcon className={reducedMotion ? '' : 'animate-spin'} size={24} aria-hidden="true" />
       </div>
       <div>
-        <p className="font-display text-3xl leading-tight">Verificando sua análise final…</p>
+        <p className="font-display text-3xl leading-tight">Verificando sua análise expandida…</p>
         <p className="mt-3 max-w-xl text-sm leading-6 text-muted">
           Se ela já tiver sido preparada, será retomada sem uma nova geração.
         </p>
@@ -325,14 +327,14 @@ const AnalysisResult = function AnalysisResult({
       <header className="brand-grid brand-grid-dark relative overflow-hidden border border-gold/25 bg-night p-7 text-paper shadow-gold md:p-12">
         <div className="relative z-10">
           <div className="flex flex-wrap items-center justify-between gap-4">
-            <span className="text-[0.68rem] font-semibold uppercase tracking-[0.2em] text-gold-pale/65">Análise final</span>
+            <span className="text-[0.68rem] font-semibold uppercase tracking-[0.2em] text-gold-pale/65">Análise expandida</span>
             <AnalysisMode mode={snapshot.generationMode} />
           </div>
           <div className="mt-10 grid gap-7 lg:grid-cols-[auto_1fr] lg:gap-10">
             <QuotesIcon className="text-gold" size={37} weight="light" aria-hidden="true" />
             <div>
               <h2 id="analysis-result-title" className="font-display text-4xl font-light leading-[1.03] tracking-[-0.035em] md:text-6xl">
-                Uma leitura possível da sua jornada.
+                Reflexão expandida do seu percurso.
               </h2>
               <p className="mt-7 max-w-4xl font-serif text-xl leading-relaxed text-paper/82 md:text-2xl">
                 {snapshot.summary}
@@ -397,6 +399,11 @@ const AnalysisResult = function AnalysisResult({
           <p>{snapshot.notice}</p>
         </div>
       )}
+
+      <p className="mt-8 border-t border-ink/15 pt-5 text-xs leading-5 text-muted">
+        Este conteúdo não constitui diagnóstico, avaliação psicológica ou substituição de
+        acompanhamento profissional.
+      </p>
     </motion.section>
   );
 };

@@ -7,7 +7,6 @@ import {
   Eye,
   HandTap,
   LockKey,
-  Quotes,
   SignOut,
   Sparkle,
   WarningCircle,
@@ -17,6 +16,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { api, ApiClientError, apiUrl } from './api';
 import { BrandLogo, BrandSymbol } from './components/BrandLogo';
 import { FinalAnalysis } from './components/FinalAnalysis';
+import { InitialInterpretationPage } from './components/InitialInterpretationPage';
 import { LandingPage } from './components/LandingPage';
 import { useMotionPreference } from './components/MotionPreference';
 import type {
@@ -710,10 +710,10 @@ function QuestionsFlow({ journey }: { journey: Journey }) {
         </div>
         <div>
           <p className="font-display text-3xl leading-tight" role="status" aria-live="polite">
-            Retomando suas perguntas…
+            Retomando sua interpretação inicial…
           </p>
           <p className="mt-3 text-sm leading-relaxed text-muted">
-            Suas respostas já registradas serão preservadas.
+            A leitura e as respostas já registradas serão preservadas.
           </p>
           <div className="mt-7 space-y-3" aria-hidden="true">
             <span className="block h-2 w-full animate-pulse bg-ink/10" />
@@ -730,8 +730,8 @@ function QuestionsFlow({ journey }: { journey: Journey }) {
       <section>
         <SectionHeading
           eyebrow="Perguntas reflexivas"
-          title="Não conseguimos abrir esta etapa."
-          description="Sua sequência continua salva. Você pode tentar retomar as perguntas sem refazer o percurso."
+          title="Não conseguimos abrir sua interpretação."
+          description="Sua sequência continua salva. Você pode tentar retomar esta etapa sem refazer o percurso."
         />
         <div className="mt-7">
           <ErrorNotice message={error || 'Não foi possível carregar esta etapa.'} />
@@ -790,8 +790,8 @@ function CompletedSequence({
         Observe sua sequência por inteiro.
       </h1>
       <p className="mt-6 max-w-2xl text-base leading-relaxed text-muted md:text-lg">
-        Não é preciso fazer todas as combinações se encaixarem. Quando estiver pronta(o), siga para
-        perguntas abertas sobre o que esta sequência desperta em você.
+        Não é preciso fazer todas as combinações se encaixarem. Quando estiver pronta(o), continue
+        para receber a primeira leitura do seu percurso.
       </p>
       <div className="mt-10 grid border-y border-ink/15 md:grid-cols-[1fr_auto] md:items-center">
         <div className="flex gap-4 py-7 md:pr-8">
@@ -799,10 +799,10 @@ function CompletedSequence({
             <Sparkle size={21} aria-hidden="true" />
           </div>
           <div>
-            <h2 className="font-display text-2xl">Continuar com perguntas reflexivas</h2>
+            <h2 className="font-display text-2xl">Receber minha interpretação inicial</h2>
             <p className="mt-2 max-w-xl text-sm leading-relaxed text-muted">
-              Uma única sequência será preparada a partir do seu relato e das cinco combinações.
-              Suas respostas serão salvas uma a uma para retomada neste navegador.
+              AYA observará sua circunstância e os cinco conjuntos como um percurso completo. O
+              resultado ficará salvo para retomada neste navegador.
             </p>
           </div>
         </div>
@@ -817,11 +817,11 @@ function CompletedSequence({
             {busy ? (
               <>
                 <CircleNotch className="animate-spin" size={18} aria-hidden="true" />
-                Preparando perguntas…
+                AYA está observando seu percurso…
               </>
             ) : (
               <>
-                Gerar perguntas reflexivas
+                Continuar para a interpretação
                 <ArrowRight size={18} aria-hidden="true" />
               </>
             )}
@@ -830,8 +830,8 @@ function CompletedSequence({
       </div>
       <p id="questions-privacy-note" className="mt-3 flex items-start gap-2 text-xs leading-relaxed text-muted">
         <LockKey className="mt-0.5 shrink-0" size={14} aria-hidden="true" />
-        Não feche esta página enquanto as perguntas estiverem sendo preparadas. Nenhuma resposta é
-        guardada no armazenamento local do navegador.
+        Cada combinação será considerada dentro do contexto completo do seu percurso. Não feche esta
+        página durante o processamento.
       </p>
       {error && <ErrorNotice message={error} className="mt-5" />}
       <SetGrid sets={journey.sets} />
@@ -856,217 +856,39 @@ function Questionnaire({
     text?: string
   ) => Promise<boolean>;
 }) {
-  const orderedQuestions = snapshot.questions
-    .slice()
-    .sort((first, second) => first.displayOrder - second.displayOrder);
-  const currentQuestion = orderedQuestions.find((question) => !question.answer);
-  const [draft, setDraft] = useState('');
-
-  useEffect(() => {
-    setDraft('');
-  }, [currentQuestion?.id]);
-
-  useScrollToTopOnChange(currentQuestion?.id ?? 'questions-complete');
-
   const complete =
     snapshot.answersComplete ||
     snapshot.generationStatus === 'ANSWERS_COMPLETED' ||
-    !currentQuestion;
+    snapshot.questions.every((question) => question.answer);
 
   if (snapshot.safety.requiresPause) {
     return <SafetyPause journey={journey} snapshot={snapshot} />;
   }
 
   if (complete) {
-    return <QuestionsComplete journey={journey} snapshot={snapshot} />;
+    return (
+      <>
+        <InitialInterpretationPage
+          journey={journey}
+          snapshot={snapshot}
+          busy={false}
+          error=""
+          readOnly
+          onSave={onSave}
+        />
+        <QuestionsComplete journey={journey} snapshot={snapshot} />
+      </>
+    );
   }
-
-  async function submit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const answer = draft.trim();
-    if (!answer || !currentQuestion) return;
-    if (await onSave(currentQuestion, 'TEXT', answer)) setDraft('');
-  }
-
-  async function choose(responseType: Exclude<QuestionResponseType, 'TEXT'>) {
-    if (!currentQuestion) return;
-    if (await onSave(currentQuestion, responseType)) setDraft('');
-  }
-
-  const progress = snapshot.totalCount > 0
-    ? Math.round((snapshot.answeredCount / snapshot.totalCount) * 100)
-    : 0;
-  const questionNumber = currentQuestion
-    ? orderedQuestions.findIndex((question) => question.id === currentQuestion.id) + 1
-    : snapshot.totalCount;
 
   return (
-    <motion.section
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4 }}
-      aria-labelledby="questions-title"
-    >
-      <div className="flex flex-col justify-between gap-6 md:flex-row md:items-end">
-        <div className="max-w-2xl">
-          <span className="eyebrow">Perguntas reflexivas</span>
-          <h1 id="questions-title" className="mt-3 font-display text-4xl leading-[1.04] tracking-[-0.025em] md:text-6xl">
-            Observe o que faz sentido para você.
-          </h1>
-        </div>
-        <GenerationMode mode={snapshot.generationMode} />
-      </div>
-
-      {snapshot.generationMode === 'DEMO' && <DemoNotice />}
-      {snapshot.safety.requiresProfessionalReview && (
-        <div className="mt-6 flex items-start gap-3 border border-danger/30 bg-danger/5 p-4 text-sm leading-relaxed">
-          <WarningCircle className="mt-0.5 shrink-0 text-danger" size={20} aria-hidden="true" />
-          <p>
-            Revisão profissional é recomendada; nenhuma revisão automática foi solicitada. Você pode
-            pausar a qualquer momento.
-          </p>
-        </div>
-      )}
-
-      {snapshot.reflectionSequence && (
-        <blockquote className="mt-8 grid gap-4 border-y border-ink/15 py-6 md:grid-cols-[auto_1fr] md:items-start">
-          <Quotes className="text-accent" size={28} weight="light" aria-hidden="true" />
-          <p className="max-w-3xl font-display text-xl leading-relaxed text-ink/85 md:text-2xl">
-            {snapshot.reflectionSequence}
-          </p>
-        </blockquote>
-      )}
-
-      <div className="mt-9 flex items-center justify-between gap-4 text-sm font-medium text-muted">
-        <span>
-          Pergunta {questionNumber} de {snapshot.totalCount}
-        </span>
-        <span>{progress}% concluído</span>
-      </div>
-      <div
-        className="mt-3 flex gap-1.5"
-        role="progressbar"
-        aria-label="Progresso das respostas"
-        aria-valuemin={0}
-        aria-valuemax={snapshot.totalCount}
-        aria-valuenow={snapshot.answeredCount}
-      >
-        {orderedQuestions.map((question, index) => (
-          <span
-            key={question.id}
-            className={`h-1.5 flex-1 transition-colors duration-300 ${index < snapshot.answeredCount ? 'bg-accent' : 'bg-ink/10'}`}
-            aria-hidden="true"
-          />
-        ))}
-      </div>
-
-      <motion.form
-        key={currentQuestion.id}
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ type: 'spring', stiffness: 96, damping: 20 }}
-        onSubmit={(event) => void submit(event)}
-        className="surface mt-7 grid gap-6 p-6 md:grid-cols-[4.5rem_1fr] md:gap-8 md:p-9"
-        aria-busy={busy}
-      >
-        <div className="font-display text-4xl text-accent" aria-hidden="true">
-          {String(questionNumber).padStart(2, '0')}
-        </div>
-        <div>
-          <p className="eyebrow">
-            {currentQuestion.type === 'INTEGRATIVE'
-              ? 'Integração da sequência'
-              : currentQuestion.stageName ??
-                (currentQuestion.stepNumber ? labels[currentQuestion.stepNumber - 1] : 'Reflexão')}
-          </p>
-          <h2 className="mt-4 max-w-3xl font-display text-2xl leading-snug md:text-4xl">
-            {currentQuestion.text}
-          </h2>
-          <label className="mt-8 block text-sm font-semibold" htmlFor={`answer-${currentQuestion.id}`}>
-            Sua resposta
-          </label>
-          <textarea
-            id={`answer-${currentQuestion.id}`}
-            className="mt-2"
-            rows={6}
-            maxLength={5000}
-            value={draft}
-            onChange={(event) => setDraft(event.target.value)}
-            disabled={busy}
-            placeholder="Escreva com suas palavras…"
-            aria-describedby={`answer-help-${currentQuestion.id}`}
-          />
-          <div
-            id={`answer-help-${currentQuestion.id}`}
-            className="mt-2 flex items-start justify-between gap-4 text-xs leading-relaxed text-muted"
-          >
-            <span>Não há resposta certa. Você também pode escolher uma das opções abaixo.</span>
-            <span className="shrink-0">{draft.length}/5000</span>
-          </div>
-
-          {error && <ErrorNotice message={error} className="mt-5" />}
-
-          <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:items-center">
-            <button className="button" disabled={busy || !draft.trim()}>
-              {busy ? (
-                <>
-                  <CircleNotch className="animate-spin" size={18} aria-hidden="true" />
-                  Salvando…
-                </>
-              ) : (
-                <>
-                  Salvar e continuar
-                  <ArrowRight size={18} aria-hidden="true" />
-                </>
-              )}
-            </button>
-            <button
-              type="button"
-              className="button-secondary"
-              disabled={busy}
-              onClick={() => void choose('SKIPPED')}
-            >
-              Pular esta pergunta
-            </button>
-          </div>
-
-          <details className="mt-6 border-t border-ink/10 pt-5">
-            <summary className="min-h-11 w-fit cursor-pointer py-3 text-sm font-semibold text-muted transition-colors hover:text-ink">
-              Outras formas de responder
-            </summary>
-            <div className="mt-3 flex flex-wrap gap-2">
-              <button
-                type="button"
-                className="choice-button"
-                disabled={busy}
-                onClick={() => void choose('NO_RELATION')}
-              >
-                Não vejo relação agora
-              </button>
-              <button
-                type="button"
-                className="choice-button"
-                disabled={busy}
-                onClick={() => void choose('DONT_KNOW')}
-              >
-                Não sei responder
-              </button>
-              <button
-                type="button"
-                className="choice-button"
-                disabled={busy}
-                onClick={() => void choose('PREFER_NOT_TO_ANSWER')}
-              >
-                Prefiro não responder
-              </button>
-            </div>
-          </details>
-        </div>
-      </motion.form>
-
-      {snapshot.notice && <p className="mt-5 text-sm leading-relaxed text-muted">{snapshot.notice}</p>}
-      <SequenceDetails journey={journey} />
-    </motion.section>
+    <InitialInterpretationPage
+      journey={journey}
+      snapshot={snapshot}
+      busy={busy}
+      error={error}
+      onSave={onSave}
+    />
   );
 }
 

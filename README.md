@@ -2,7 +2,7 @@
 
 Plataforma de jornada reflexiva do Método DHA, com frontend React, API NestJS e PostgreSQL. O participante entra sem conta ou senha; sua sessão é mantida por cookie seguro.
 
-O fluxo atual é: identificação e consentimentos → tema e relato → cinco conjuntos de palavra/imagem → cinco perguntas reflexivas → respostas → análise final estruturada.
+O fluxo atual é: identificação e consentimentos → tema e relato → cinco conjuntos de palavra/imagem → primeira leitura com cinco perguntas reflexivas → respostas → análise expandida estruturada.
 
 ## Rodar tudo com Docker
 
