@@ -42,11 +42,26 @@ const questionContext: QuestionGenerationContext = {
 };
 
 const questionWireResponse = {
-  reflexaoSequencia: 'A sequÃªncia pode ser observada sem conclusÃµes antecipadas.',
+  reflexaoSequencia: [
+    'Visão da sequência:',
+    'A sequência pode ser observada sem conclusões antecipadas.',
+    '',
+    'Síntese da leitura:',
+    'Esta é uma hipótese inicial que poderá ser revista pelas respostas.',
+  ].join('\n'),
   etapas: DHA_STEP_NAMES.map((nomeEtapa, index) => ({
     numeroEtapa: index + 1,
     nomeEtapa,
-    pergunta: `O que surge para vocÃª ao observar a etapa ${index + 1}?`,
+    pergunta: [
+      'O que o conjunto revela:',
+      `Esta combinação pode convidar a observar o movimento ${index + 1} como possibilidade.`,
+      '',
+      'Pergunta de reflexão:',
+      `O que surge para você ao observar a etapa ${index + 1}?`,
+      '',
+      'Convite à consciência:',
+      'Considere apenas o que fizer sentido na sua experiência.',
+    ].join('\n'),
   })),
   sinalizacaoSeguranca: {
     requerPausa: false,
@@ -188,9 +203,9 @@ describe('contratos estruturados do GeminiProvider', () => {
     expect(request.config.systemInstruction)
       .toContain('campo singular "pergunta"');
     expect(request.config.systemInstruction)
-      .toContain('não existem na resposta');
+      .toContain('três blocos editoriais');
     expect(request.contents[0]?.parts[0]?.text)
-      .toContain('"versaoPrompt":"dha-ia-v2.3.0"');
+      .toContain('"versaoPrompt":"dha-ia-v3.0.0"');
   });
 
   it('envia o schema da anÃ¡lise no subconjunto aceito e fixa as cinco etapas', async () => {

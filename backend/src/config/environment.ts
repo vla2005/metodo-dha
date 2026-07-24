@@ -23,9 +23,9 @@ class EnvironmentVariables {
   @IsString() GEMINI_MODEL = 'gemini-3.1-flash-lite';
   @Type(() => Number) @IsInt() @Min(1) GEMINI_DAILY_HARD_LIMIT: number = 500;
   @Type(() => Number) @IsInt() @Min(1) GEMINI_DAILY_OPERATIONAL_LIMIT: number = 450;
-  @Type(() => Number) @IsInt() @Min(1000) GEMINI_TIMEOUT_MS: number = 30000;
+  @Type(() => Number) @IsInt() @Min(1000) GEMINI_TIMEOUT_MS: number = 90000;
   @Type(() => Number) @IsInt() @Min(0) GEMINI_MAX_RETRIES: number = 1;
-  @Type(() => Number) @IsInt() @Min(256) GEMINI_MAX_OUTPUT_TOKENS: number = 4096;
+  @Type(() => Number) @IsInt() @Min(256) GEMINI_MAX_OUTPUT_TOKENS: number = 12288;
   @IsString() GEMINI_PROMPT_VERSION = 'questions-v2';
   @IsString() GEMINI_SCHEMA_VERSION = 'questions-v2';
   @IsString() GEMINI_ANALYSIS_PROMPT_VERSION = 'analysis-v2';

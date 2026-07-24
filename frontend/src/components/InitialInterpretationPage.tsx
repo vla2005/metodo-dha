@@ -24,7 +24,6 @@ interface InitialInterpretationPageProps {
   snapshot: QuestionsSnapshot;
   busy: boolean;
   error: string;
-  readOnly?: boolean;
   onSave: (
     question: ReflectiveQuestion,
     responseType: QuestionResponseType,
@@ -37,7 +36,6 @@ export function InitialInterpretationPage({
   snapshot,
   busy,
   error,
-  readOnly = false,
   onSave
 }: InitialInterpretationPageProps) {
   const { reducedMotion } = useMotionPreference();
@@ -51,20 +49,19 @@ export function InitialInterpretationPage({
     orderedQuestions.findIndex((question) => !question.answer)
   );
   const [activeIndex, setActiveIndex] = useState(firstPending);
-  const mobileMovementRef = useRef<HTMLDivElement>(null);
-  const previousMobileIndex = useRef(activeIndex);
+  const movementRef = useRef<HTMLDivElement>(null);
+  const previousIndex = useRef(activeIndex);
 
   useEffect(() => {
-    if (!readOnly) setActiveIndex(firstPending);
-  }, [firstPending, readOnly, snapshot.answeredCount]);
+    setActiveIndex(firstPending);
+  }, [firstPending, snapshot.answeredCount]);
 
   useEffect(() => {
-    if (previousMobileIndex.current === activeIndex) return;
-    previousMobileIndex.current = activeIndex;
-    if (!window.matchMedia('(max-width: 1023px)').matches) return;
+    if (previousIndex.current === activeIndex) return;
+    previousIndex.current = activeIndex;
 
     const frame = window.requestAnimationFrame(() => {
-      mobileMovementRef.current?.scrollIntoView({
+      movementRef.current?.scrollIntoView({
         behavior: reducedMotion ? 'auto' : 'smooth',
         block: 'start'
       });
@@ -101,8 +98,8 @@ export function InitialInterpretationPage({
       <div className="mt-8 flex items-start gap-3 border-l-2 border-accent bg-accent/5 px-5 py-4 text-sm leading-6 text-muted">
         <Eye className="mt-0.5 shrink-0 text-accent" size={20} aria-hidden="true" />
         <p>
-          Esta leitura é simbólica e reflexiva. As combinações não possuem significados fixos.
-          Considere apenas o que fizer sentido para sua experiência.
+          {interpretation.disclaimer ||
+            'Esta leitura é simbólica e reflexiva. As combinações não possuem significados fixos. Considere apenas o que fizer sentido para sua experiência.'}
         </p>
       </div>
 
@@ -126,7 +123,7 @@ export function InitialInterpretationPage({
         </p>
       )}
 
-      <div ref={mobileMovementRef} className="mt-10 scroll-mt-24 lg:hidden">
+      <div ref={movementRef} className="mt-10 scroll-mt-24">
         <div className="flex items-center justify-between gap-4 text-sm font-medium text-muted">
           <span>Movimento {activeIndex + 1} de {interpretation.movements.length}</span>
           <span>{snapshot.answeredCount} de {snapshot.totalCount} respondidos</span>
@@ -141,7 +138,6 @@ export function InitialInterpretationPage({
             question={activeQuestion}
             busy={busy}
             error={error}
-            readOnly={readOnly}
             onSave={onSave}
           />
         )}
@@ -170,31 +166,7 @@ export function InitialInterpretationPage({
         </nav>
       </div>
 
-      <div className="mt-12 hidden space-y-8 lg:block">
-        <div className="flex items-center justify-between gap-4 text-sm font-medium text-muted">
-          <span>Progresso das respostas</span>
-          <span>{snapshot.answeredCount} de {snapshot.totalCount}</span>
-        </div>
-        <Progress answered={snapshot.answeredCount} total={snapshot.totalCount} />
-        {interpretation.movements.map((movement) => {
-          const question = orderedQuestions.find((item) => item.id === movement.questionId);
-          if (!question) return null;
-          return (
-            <MovementCard
-              key={question.id}
-              journey={journey}
-              movement={movement}
-              question={question}
-              busy={busy}
-              error={error}
-              readOnly={readOnly}
-              onSave={onSave}
-            />
-          );
-        })}
-      </div>
-
-      {interpretation.initialSynthesis && (
+      {interpretation.initialSynthesis && activeIndex === interpretation.movements.length - 1 && (
         <section className="brand-grid brand-grid-dark mt-12 border border-gold/25 bg-night p-7 text-paper md:p-11" aria-labelledby="initial-synthesis-title">
           <Sparkle className="text-gold-pale" size={26} weight="light" aria-hidden="true" />
           <p className="mt-6 text-[0.68rem] font-semibold uppercase tracking-[0.2em] text-gold-pale/65">
@@ -222,7 +194,6 @@ function MovementCard({
   question,
   busy,
   error,
-  readOnly,
   onSave
 }: {
   journey: Journey;
@@ -230,7 +201,6 @@ function MovementCard({
   question: ReflectiveQuestion;
   busy: boolean;
   error: string;
-  readOnly: boolean;
   onSave: InitialInterpretationPageProps['onSave'];
 }) {
   const set = journey.sets.find((item) => item.position === movement.stepNumber);
@@ -243,12 +213,12 @@ function MovementCard({
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const answer = draft.trim();
-    if (!answer || question.answer || readOnly) return;
+    if (!answer || question.answer) return;
     await onSave(question, 'TEXT', answer);
   }
 
   async function choose(responseType: Exclude<QuestionResponseType, 'TEXT'>) {
-    if (question.answer || readOnly) return;
+    if (question.answer) return;
     await onSave(question, responseType);
   }
 
@@ -299,7 +269,7 @@ function MovementCard({
 
             {question.answer ? (
               <SavedAnswer question={question} />
-            ) : !readOnly ? (
+            ) : (
               <form className="mt-7" onSubmit={(event) => void submit(event)} aria-busy={busy}>
                 <label className="block text-sm font-semibold" htmlFor={`answer-${question.id}`}>
                   Sua resposta
@@ -341,7 +311,7 @@ function MovementCard({
                   </button>
                 </div>
               </form>
-            ) : null}
+            )}
           </section>
 
           {movement.consciousnessInvitation && (

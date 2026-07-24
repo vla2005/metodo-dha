@@ -21,10 +21,12 @@ import {
   PROVEDOR_IA,
   analysisGenerationContextSchema,
   analysisGenerationSchema,
+  persistedQuestionGenerationSchema,
   type AnaliseGerada,
   type AnalysisGenerationContext,
   type ProvedorIa,
 } from '../ia/provedor-ia';
+import { parseInitialInterpretation } from '../ia/initial-interpretation';
 import { pacificQuotaDate, QuotaService, type QuotaReservation } from '../perguntas/quota.service';
 
 const ANALYSIS_PROMPT_VERSION = 'analysis-v2';
@@ -91,6 +93,7 @@ type AnalysisJourney = {
       text: string | null;
     } | null;
   }>;
+  initialInterpretationResult?: unknown;
 };
 
 type RetryPolicyInput = {
@@ -564,6 +567,13 @@ export class AnalysisService {
       stepQuestions.set(question.stepNumber, current);
     }
 
+    const persistedInterpretation = persistedQuestionGenerationSchema.safeParse(
+      journey.initialInterpretationResult,
+    );
+    const initialInterpretation = persistedInterpretation.success
+      ? parseInitialInterpretation(persistedInterpretation.data)
+      : undefined;
+
     const candidate = {
       theme,
       initialNarrative: journey.circumstanceText,
@@ -592,6 +602,7 @@ export class AnalysisService {
       }),
       integrativeQuestions: integrativeQuestions.map((question) =>
         this.contextQuestion(question)),
+      initialInterpretation,
     };
     const parsed = analysisGenerationContextSchema.safeParse(candidate);
     if (!parsed.success) {
@@ -670,7 +681,18 @@ export class AnalysisService {
         HttpStatus.SERVICE_UNAVAILABLE,
       );
     }
-    return journey;
+    const questionsOperation = await this.database.aiOperation.findFirst({
+      where: {
+        journeyId: journey.id,
+        type: AiOperationType.QUESTIONS,
+        status: AiOperationStatus.COMPLETED,
+      },
+      select: { resultJson: true },
+    });
+    return {
+      ...journey,
+      initialInterpretationResult: questionsOperation?.resultJson,
+    };
   }
 
   private async invalidateCachedResult(operation: {

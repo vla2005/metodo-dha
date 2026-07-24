@@ -26,6 +26,7 @@ import {
   type ProvedorIa,
   type QuestionGenerationContext,
 } from '../ia/provedor-ia';
+import { parseInitialInterpretation } from '../ia/initial-interpretation';
 import {
   PublicAnswerResponseType,
   type SaveAnswerItemDto,
@@ -557,12 +558,19 @@ export class QuestionsService {
     generated: PerguntasGeradas,
   ): ReflectiveQuestionCreateInput[] {
     const setIds = new Map(sets.map((set) => [set.position, set.id]));
+    const interpretation = parseInitialInterpretation(generated);
+    const movements = new Map(
+      interpretation.movements.map((movement) => [
+        movement.stepNumber,
+        movement,
+      ]),
+    );
     let displayOrder = 0;
     const questions: ReflectiveQuestionCreateInput[] = [];
     for (const stage of generated.etapas) {
       const journeySetId = setIds.get(stage.numeroEtapa);
       if (!journeySetId) throw new Error('REFLECTIVE_QUESTION_SET_NOT_FOUND');
-      const text = stage.perguntas[0];
+      const text = movements.get(stage.numeroEtapa)?.reflectionQuestion;
       if (!text) throw new Error('REFLECTIVE_QUESTION_TEXT_NOT_FOUND');
       questions.push({
         id: randomUUID(),
@@ -634,17 +642,41 @@ export class QuestionsService {
     const answeredCount = operation.reflectiveQuestions.filter((question) => question.answer).length;
     const totalCount = operation.reflectiveQuestions.length;
     const answersComplete = totalCount > 0 && answeredCount === totalCount;
+    const interpretation = parseInitialInterpretation(generated.data);
+    const interpretationByStep = new Map(
+      interpretation.movements.map((movement) => [
+        movement.stepNumber,
+        movement,
+      ]),
+    );
+    const questionIdsByStep = new Map(
+      operation.reflectiveQuestions
+        .filter((question) => question.stepNumber !== null)
+        .map((question) => [question.stepNumber, question.id]),
+    );
     return {
       generationStatus: answersComplete ? 'ANSWERS_COMPLETED' as const : 'AVAILABLE' as const,
       generationMode: operation.provider === 'demo' ? 'DEMO' as const : 'GEMINI' as const,
-      reflectionSequence: generated.data.reflexaoSequencia,
+      reflectionSequence: interpretation.sequenceView,
+      initialInterpretation: {
+        sequenceView: interpretation.sequenceView,
+        movements: interpretation.movements.map((movement) => ({
+          ...movement,
+          questionId: questionIdsByStep.get(movement.stepNumber) ?? null,
+        })),
+        initialSynthesis: interpretation.initialSynthesis,
+        disclaimer: interpretation.disclaimer,
+      },
       questions: operation.reflectiveQuestions.map((question) => ({
         id: question.id,
         type: question.type,
         displayOrder: question.displayOrder,
         stepNumber: question.stepNumber,
         stageName: question.stepNumber ? DHA_STEP_NAMES[question.stepNumber - 1] ?? null : null,
-        text: question.text,
+        text: question.stepNumber
+          ? interpretationByStep.get(question.stepNumber)?.reflectionQuestion
+            ?? question.text
+          : question.text,
         answer: question.answer ? {
           responseType: question.answer.responseType,
           text: question.answer.text,

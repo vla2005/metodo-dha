@@ -1,6 +1,7 @@
 import { FormEvent, useCallback, useEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import {
+  ArrowLeft,
   ArrowRight,
   CheckCircle,
   CircleNotch,
@@ -866,19 +867,7 @@ function Questionnaire({
   }
 
   if (complete) {
-    return (
-      <>
-        <InitialInterpretationPage
-          journey={journey}
-          snapshot={snapshot}
-          busy={false}
-          error=""
-          readOnly
-          onSave={onSave}
-        />
-        <QuestionsComplete journey={journey} snapshot={snapshot} />
-      </>
-    );
+    return <QuestionsComplete journey={journey} snapshot={snapshot} />;
   }
 
   return (
@@ -916,6 +905,45 @@ function QuestionsComplete({
   journey: Journey;
   snapshot: QuestionsSnapshot;
 }) {
+  const [showAnalysis, setShowAnalysis] = useState(false);
+
+  function changePage(next: boolean) {
+    setShowAnalysis(next);
+    window.requestAnimationFrame(() => {
+      window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+    });
+  }
+
+  if (showAnalysis) {
+    return (
+      <motion.section
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4 }}
+        aria-labelledby="expanded-analysis-page-title"
+      >
+        <button type="button" className="button-secondary" onClick={() => changePage(false)}>
+          <ArrowLeft size={18} aria-hidden="true" />
+          Voltar
+        </button>
+        <div className="mt-9 max-w-3xl">
+          <span className="eyebrow">Nova etapa</span>
+          <h1
+            id="expanded-analysis-page-title"
+            className="mt-3 font-display text-5xl leading-none tracking-[-0.025em] md:text-7xl"
+          >
+            Análise expandida.
+          </h1>
+          <p className="mt-6 text-base leading-7 text-muted md:text-lg">
+            Nesta página, suas respostas podem ser integradas ao restante do percurso para criar
+            uma reflexão mais ampla.
+          </p>
+        </div>
+        <FinalAnalysis journeyId={journey.publicId} />
+      </motion.section>
+    );
+  }
+
   return (
     <motion.section
       initial={{ opacity: 0, y: 12 }}
@@ -950,12 +978,14 @@ function QuestionsComplete({
             </div>
           )}
           {snapshot.notice && <p className="mt-5 text-sm leading-relaxed text-muted">{snapshot.notice}</p>}
+          <button type="button" className="button mt-8" onClick={() => changePage(true)}>
+            Ir para a análise expandida
+            <ArrowRight size={18} aria-hidden="true" />
+          </button>
         </div>
         <div className="pointer-events-none absolute -bottom-28 -right-28 h-80 w-80 rounded-full border border-ink/10" aria-hidden="true" />
         <div className="pointer-events-none absolute -bottom-12 -right-12 h-44 w-44 rounded-full border border-accent/25" aria-hidden="true" />
       </div>
-      <FinalAnalysis journeyId={journey.publicId} />
-      <SequenceDetails journey={journey} />
     </motion.section>
   );
 }

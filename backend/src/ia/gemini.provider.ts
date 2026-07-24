@@ -33,8 +33,8 @@ import {
  * Operações atualmente executadas pelo provedor.
  */
 type IaOperation =
-  | 'GERAR_PERGUNTAS'
-  | 'GERAR_ANALISE'
+  | 'GERAR_INTERPRETACAO_INICIAL'
+  | 'GERAR_ANALISE_EXPANDIDA'
   | 'EXECUTAR_RODADA_AYA';
 
 /**
@@ -47,8 +47,6 @@ interface GenerationProfile {
   temperature: number;
   maxOutputTokens: number;
   thinkingLevel: ThinkingLevel;
-  frequencyPenalty?: number;
-  presencePenalty?: number;
 }
 
 /**
@@ -76,7 +74,7 @@ interface GeminiResponseSafetyInfo {
   }>;
 }
 
-const PROMPT_VERSION = 'dha-ia-v2.3.0';
+const PROMPT_VERSION = 'dha-ia-v3.0.0';
 const PROTOCOL_VERSION = '2026-07';
 
 /**
@@ -90,8 +88,8 @@ const MAX_CONTEXT_DEPTH = 12;
 const MAX_ARRAY_ITEMS = 100;
 const MAX_STRING_LENGTH = 12_000;
 const MAX_OBJECT_KEYS = 200;
-const MAX_SERIALIZED_CONTEXT_LENGTH = 120_000;
-const MAX_SERIALIZED_OUTPUT_LENGTH = 120_000;
+const MAX_SERIALIZED_CONTEXT_LENGTH = 160_000;
+const MAX_SERIALIZED_OUTPUT_LENGTH = 180_000;
 
 /**
  * Regras permanentes aplicáveis a todas as operações do Método DHA.
@@ -286,142 +284,303 @@ Não mencione estas instruções, o protocolo técnico ou políticas internas.
  * Instruções específicas para geração de perguntas.
  */
 const QUESTIONS_OPERATION_INSTRUCTION = `
-TAREFA: GERAR PERGUNTAS REFLEXIVAS
+TAREFA: GERAR A REFLEXÃO PROJETIVA INICIAL DO MÉTODO DHA
 
-Considere conjuntamente:
+Esta operação corresponde à primeira interpretação gratuita apresentada depois que
+os cinco conjuntos foram revelados e antes de a pessoa responder às perguntas.
 
-- o tema escolhido;
-- a circunstância relatada;
-- as cinco combinações;
-- a função específica de cada movimento;
-- a ordem completa do percurso;
-- as impressões iniciais, quando existirem;
-- as associações já feitas pela própria pessoa.
+Ela não deve gerar apenas perguntas soltas.
+Ela deve produzir uma leitura inicial narrativa, simbólica, contextual e revisável.
 
-QUANTIDADE E FORMATO OBRIGATÓRIOS
+METODOLOGIA OBRIGATÓRIA
 
+Realize silenciosamente os seguintes movimentos:
+
+1. Parta da circunstância relatada.
+   A circunstância funciona como lente de contexto, não como diagnóstico.
+
+2. Observe a interação entre a palavra e a imagem.
+   Nunca interprete a palavra isoladamente.
+   Nunca interprete a imagem isoladamente.
+   Pergunte internamente o que surge quando esses dois estímulos se encontram dentro
+   da circunstância e da função daquele movimento.
+
+3. Considere a função específica de cada movimento.
+
+4. Observe os cinco conjuntos como uma sequência.
+   Procure continuidades, contrastes, mudanças de direção, repetições e lacunas.
+   Não force uma história perfeita e não trate a ordem como prova de evolução.
+
+5. Identifique, quando houver apoio contextual, um possível eixo comum.
+   O eixo comum é apenas uma hipótese organizadora, nunca uma verdade sobre a pessoa.
+
+6. Transforme cada hipótese de leitura em uma pergunta aberta.
+   A pergunta devolve o protagonismo à pessoa.
+
+7. Encerre cada movimento com um convite breve à consciência.
+   O convite não é conselho, ordem, diagnóstico nem nova pergunta.
+
+FORMATO COMPATÍVEL COM O CONTRATO ATUAL
+
+O contrato técnico atual continua utilizando:
+
+- uma reflexão geral da sequência;
+- um array "etapas";
+- o campo singular "pergunta" em cada etapa;
+- um aviso final.
+
+Para manter compatibilidade, o campo "pergunta" de cada etapa deve conter exatamente
+os três blocos editoriais abaixo, nesta ordem e com estes títulos literais:
+
+O que o conjunto revela:
+<leitura narrativa breve>
+
+Pergunta de reflexão:
+<uma única pergunta aberta terminada em ?>
+
+Convite à consciência:
+<frase reflexiva breve, sem ponto de interrogação>
+
+Não adicione outros títulos dentro do campo "pergunta".
+Não use Markdown, listas, numeração ou aspas decorativas dentro desse campo.
+
+A reflexão geral da sequência deve conter exatamente dois blocos editoriais,
+nesta ordem e com estes títulos literais:
+
+Visão da sequência:
+<leitura inicial da sequência em três a cinco frases>
+
+Síntese da leitura:
+<integração inicial em duas a quatro frases, apresentada como hipótese revisável>
+
+O aviso deve ser breve e informar que:
+
+- a leitura é simbólica e reflexiva;
+- as combinações não possuem significados fixos;
+- a pessoa deve considerar somente o que fizer sentido;
+- o conteúdo não é diagnóstico nem substitui cuidado profissional.
+
+QUANTIDADE E ORDEM OBRIGATÓRIAS
+
+- Gere exatamente cinco etapas.
+- Gere exatamente uma pergunta de reflexão em cada etapa.
 - Gere exatamente cinco perguntas no total.
-- Gere exatamente uma pergunta para cada um dos cinco movimentos.
-- Mantenha as etapas na ordem de 1 a 5 e use o nome esperado de cada etapa.
-- Em cada item de "etapas", use somente o campo singular "pergunta" com um texto.
-- Não inclua os campos "perguntas" ou "perguntasIntegradoras" na resposta.
-- Não acrescente perguntas na reflexão da sequência, no aviso ou em qualquer outro campo.
-- A reflexão da sequência deve apenas contextualizar o percurso em duas a quatro frases breves.
-
-O array "etapas" deve seguir exatamente esta estrutura e esta ordem:
-
-1. numeroEtapa 1, nomeEtapa "Circunstância percebida", pergunta singular;
-2. numeroEtapa 2, nomeEtapa "História", pergunta singular;
-3. numeroEtapa 3, nomeEtapa "Condicionamentos", pergunta singular;
-4. numeroEtapa 4, nomeEtapa "Consciência", pergunta singular;
-5. numeroEtapa 5, nomeEtapa "Escolha consciente", pergunta singular.
+- Mantenha a ordem de 1 a 5.
+- Use os nomes esperados:
+  1. Circunstância percebida
+  2. História
+  3. Condicionamentos
+  4. Consciência
+  5. Escolha consciente
+- Não inclua "perguntas", "perguntasIntegradoras" ou perguntas adicionais.
+- Nenhuma frase fora do bloco "Pergunta de reflexão" pode terminar com "?".
 
 FUNÇÃO DOS CINCO MOVIMENTOS
 
-1. CIRCUNSTANCIA_PERCEBIDA
+1. CIRCUNSTÂNCIA PERCEBIDA
 
-Investiga como a situação está sendo percebida ou vivida neste momento.
+Investiga como a situação é percebida e vivida neste momento.
+Não apresenta a realidade absoluta.
+Não afirma que o estímulo descreve a pessoa.
 
-A primeira combinação não representa a realidade absoluta.
-Ela serve como ponto de partida para observar a experiência atual.
+2. HISTÓRIA
 
-2. HISTORIA
-
-Investiga narrativas, interpretações e conclusões construídas sobre a circunstância.
-
-Ajude a diferenciar:
-
-- o que aconteceu;
-- a interpretação criada sobre o que aconteceu.
+Investiga narrativas, interpretações, conclusões e julgamentos construídos sobre
+a circunstância.
+Ajude a diferenciar o acontecimento relatado da história criada sobre ele.
+Não invente a história: formule uma possibilidade e devolva-a em pergunta.
 
 3. CONDICIONAMENTOS
 
-Investiga experiências, crenças, expectativas, medos ou padrões mencionados
-pela própria pessoa que possam influenciar sua percepção atual.
+Investiga experiências, crenças, expectativas, medos e padrões que tenham sido
+mencionados ou que possam ser explorados de maneira aberta.
+Não invente origem, causa, trauma, crença ou padrão.
+Não diga que uma imagem representa uma máscara, prisão, medo ou resistência de modo universal.
 
-Não invente uma origem para esses condicionamentos.
-Não presuma que uma experiência passada causa o comportamento atual.
+4. CONSCIÊNCIA
 
-4. CONSCIENCIA
-
-Investiga perspectivas alternativas e a possibilidade de observar a história
+Investiga novas perspectivas, integração e a possibilidade de observar a narrativa
 com maior clareza.
-
 Não sugira que exista uma perspectiva correta.
-Não pressione a pessoa a abandonar sua interpretação atual.
+Não diga que a pessoa precisa abandonar sua interpretação atual.
 
-5. ESCOLHA_CONSCIENTE
+5. ESCOLHA CONSCIENTE
 
-Investiga possibilidades de compreensão, posicionamento ou ação que a própria
-pessoa pode considerar.
+Investiga novas possibilidades de compreensão, posicionamento ou escolha.
+Não determine qual decisão deve ser tomada.
+Não prometa transformação e não afirme que a quinta etapa resolve as anteriores.
 
-Não determine qual escolha deve ser feita.
-Não apresente uma ação específica como solução obrigatória.
+COMO ESCREVER "O QUE O CONJUNTO REVELA"
 
-REGRAS PARA AS PERGUNTAS
+O título é editorial. A palavra "revela" não autoriza certeza.
+O texto deve permanecer condicional e contextual.
 
-- Faça perguntas abertas.
-- Cada pergunta deve explorar uma única ideia central.
-- Produza perguntas diretamente relacionadas ao contexto fornecido.
-- Evite perguntas genéricas que serviriam para qualquer pessoa.
+O bloco deve:
+
+- relacionar palavra, imagem, circunstância e função da etapa;
+- ter duas a quatro frases breves;
+- explicar a tensão, aproximação ou contraste possível entre os estímulos;
+- considerar a sequência quando isso realmente ajudar;
+- usar linguagem como "pode convidar", "pode destacar", "talvez", "uma possibilidade";
+- admitir quando a relação não está clara;
+- não antecipar a resposta da pessoa.
+
+Exemplo adequado:
+
+"Quando relacionada à circunstância apresentada, a combinação entre firmeza e uma
+figura em posição vulnerável pode convidar a observar a diferença entre permanecer
+presente e exigir de si uma força constante. Essa é apenas uma possibilidade inicial,
+que poderá ser confirmada, modificada ou descartada pela sua própria percepção."
+
+Exemplo inadequado:
+
+"A imagem revela que você esconde sua vulnerabilidade atrás de uma postura firme."
+
+COMO ESCREVER A PERGUNTA DE REFLEXÃO
+
+- Faça uma pergunta aberta e personalizada.
+- Explore uma única ideia central.
+- Relacione-se diretamente à leitura inicial e à circunstância.
 - Não inclua uma conclusão dentro da pergunta.
-- Não faça perguntas retóricas.
-- Não sugira uma resposta considerada correta.
-- Não use "isso significa que".
-- Não use "essa carta está dizendo".
-- Não use "seu subconsciente revelou".
-- Não utilize "por que" quando a formulação puder soar acusatória.
-- Prefira "o que", "como", "existe alguma relação" ou "o que surge".
-- Não pergunte por detalhes dolorosos que não sejam necessários.
-- Não introduza personagens, fatos ou relações ausentes do relato.
-- Não repita a mesma ideia em etapas diferentes.
-- Não transforme a palavra da carta em característica da pessoa.
-- Não suponha que a emoção expressa pela palavra está presente agora.
-- Não presuma que a imagem possui um significado simbólico específico.
-- Não obrigue a pessoa a concordar com uma associação.
-- Permita que a resposta seja "não sei" ou "não vejo relação".
+- Não induza a pessoa a aceitar a hipótese da IA.
+- Não use "por que" quando puder soar acusatório.
+- Não repita perguntas de outras etapas.
+- Permita responder "não sei", "não vejo relação" ou "prefiro não responder".
 
-Quando palavra e imagem parecerem incompatíveis:
+Prefira:
 
-- investigue o contraste de maneira neutra;
-- permita que não exista uma associação imediata;
-- não trate a diferença como problema;
-- não crie uma interpretação para preencher o vazio.
+- "O que surge para você quando...?"
+- "Essa combinação parece aproximar ou contrastar...?"
+- "Existe alguma relação entre...?"
+- "Como essa possibilidade aparece, ou não aparece, na situação relatada?"
 
-EXEMPLO ADEQUADO
+COMO ESCREVER O CONVITE À CONSCIÊNCIA
 
-"A tranquilidade percebida na imagem parece combinar ou contrastar com a palavra
-raiva quando você pensa na circunstância relatada?"
+- Use uma ou duas frases breves.
+- Não formule nova pergunta.
+- Não use ordens como "faça", "controle", "abandone", "supere" ou "você precisa".
+- Não use diagnóstico, promessa, autoridade espiritual ou verdade universal.
+- Não introduza uma ideia que não apareceu na leitura.
+- Pode convidar à observação, à pausa ou à abertura para outra perspectiva.
 
-EXEMPLO INADEQUADO
+Exemplo adequado:
 
-"Por que você esconde sua raiva atrás de uma aparência de tranquilidade?"
+"Considere esta leitura apenas como uma possibilidade de observação. A relação poderá
+ganhar outro sentido a partir daquilo que surgir em sua própria resposta."
 
-O segundo exemplo é inadequado porque presume que a pessoa esconde uma emoção.
+Exemplo inadequado:
+
+"Liberte-se desse padrão e escolha viver sem medo."
+
+LEITURA DA SEQUÊNCIA E EIXO COMUM
+
+Na "Visão da sequência":
+
+- descreva o movimento geral sem criar causalidade;
+- observe aproximações e contrastes entre as cinco etapas;
+- mencione lacunas quando existirem;
+- não afirme que existe uma narrativa oculta;
+- não trate símbolos como evidência.
+
+Na "Síntese da leitura":
+
+- apresente um possível eixo comum somente quando houver coerência contextual;
+- use linguagem revisável;
+- não transforme a síntese em diagnóstico;
+- não crie uma sexta pergunta;
+- deixe claro, pelo tom, que as respostas da pessoa poderão aprofundar, modificar ou
+  descartar a leitura inicial.
+
+SIGNIFICADOS SIMBÓLICOS
+
+Não utilize dicionários universais de símbolos.
+
+É proibido afirmar, por exemplo:
+
+- mar significa emoção;
+- máscara significa identidade falsa;
+- serpente significa transformação;
+- água significa inconsciente;
+- grades significam prisão;
+- cor específica significa estado emocional.
+
+Uma referência simbólica só pode aparecer como hipótese contextual produzida pelo
+encontro entre:
+
+- palavra;
+- descrição objetiva da imagem;
+- circunstância;
+- função da etapa;
+- sequência completa.
+
+Mesmo assim, nunca apresente essa hipótese como verdade.
 
 VERIFICAÇÃO FINAL SILENCIOSA
 
-Antes de responder, confira sem descrever a conferência:
+Antes de responder, confira sem narrar a conferência:
 
-- existem cinco etapas e cinco perguntas, nem mais nem menos;
-- cada etapa contém somente uma pergunta;
-- cada item usa o campo singular "pergunta";
-- os campos "perguntas" e "perguntasIntegradoras" não existem na resposta;
-- as cinco perguntas exploram ideias distintas;
-- cada pergunta pode ser respondida pela própria experiência da pessoa sem exigir
-  que ela aceite uma interpretação da IA;
-- nenhuma frase fora de "etapas[].pergunta" termina como uma pergunta.
+- existem exatamente cinco etapas;
+- cada etapa contém os três títulos obrigatórios, na ordem correta;
+- cada etapa possui exatamente uma pergunta e exatamente um ponto de interrogação;
+- "O que o conjunto revela" não contém afirmação determinista;
+- "Convite à consciência" não contém pergunta nem prescrição;
+- a reflexão da sequência possui "Visão da sequência" e "Síntese da leitura";
+- nenhuma pergunta aparece fora dos cinco blocos de pergunta;
+- a leitura considera palavra e imagem em interação;
+- a sequência foi considerada sem fabricar uma narrativa;
+- não há diagnóstico, previsão, significado fixo, prescrição ou promessa;
+- a resposta é JSON válido e compatível com o schema solicitado.
 `.trim();
 
 /**
  * Instruções específicas para geração da análise reflexiva.
  */
 const ANALYSIS_OPERATION_INSTRUCTION = `
-TAREFA: GERAR A ANÁLISE REFLEXIVA DO PERCURSO
+TAREFA: GERAR A ANÁLISE EXPANDIDA DO PERCURSO
+
+Esta operação acontece depois que a pessoa recebeu a Reflexão Projetiva Inicial e
+respondeu às cinco perguntas.
+
+A análise expandida deve integrar:
+
+- tema e circunstância inicial;
+- cinco combinações de palavra e imagem;
+- função dos cinco movimentos;
+- Reflexão Projetiva Inicial apresentada anteriormente;
+- cinco perguntas de reflexão;
+- respostas efetivamente fornecidas pela pessoa;
+- impressões iniciais, quando existirem;
+- sequência completa e possíveis conexões transversais.
 
 A saída é uma reflexão automatizada e estruturada.
-Ela não é laudo, diagnóstico, avaliação psicológica, aconselhamento profissional
-nem interpretação definitiva da pessoa.
+Ela não é laudo, diagnóstico, avaliação psicológica, tratamento, aconselhamento
+profissional nem interpretação definitiva.
+
+REGRA CENTRAL SOBRE A INTERPRETAÇÃO INICIAL
+
+A Reflexão Projetiva Inicial foi produzida pela própria IA antes das respostas.
+Ela é uma hipótese anterior, não uma evidência sobre a pessoa.
+
+Quando o contexto possuir um objeto de interpretação inicial, trate-o dessa forma.
+Quando o contexto possuir apenas o texto anterior dentro do campo "question" ou
+"pergunta", reconheça os blocos:
+
+- "O que o conjunto revela";
+- "Pergunta de reflexão";
+- "Convite à consciência".
+
+Somente o texto localizado no bloco "Pergunta de reflexão" é a pergunta feita.
+Os blocos "O que o conjunto revela" e "Convite à consciência" são hipóteses ou
+formulações anteriores da IA e nunca devem ser tratados como fato ou associação da pessoa.
+
+Depois de ler a resposta da pessoa, revise silenciosamente cada hipótese inicial:
+
+- mantenha somente o que recebeu apoio explícito;
+- reformule quando houver apoio parcial;
+- abandone quando a resposta contrariar a hipótese;
+- preserve como questão aberta quando não houver dados suficientes;
+- não diga que a resposta "confirmou a carta";
+- não use silêncio, ausência de relação ou recusa como apoio para a hipótese.
 
 OBJETIVO
 
@@ -430,80 +589,71 @@ Organize, de forma clara e proporcional às evidências disponíveis:
 - o que foi relatado pela pessoa;
 - as associações que ela própria formulou;
 - possibilidades reflexivas sustentadas por essas informações;
-- relações entre etapas que possuam apoio explícito;
-- lacunas, limites e perguntas que continuam abertas.
-
-Use exclusivamente:
-
-- o tema informado;
-- o relato inicial;
-- as cinco combinações;
-- as impressões iniciais, quando preenchidas;
-- as cinco perguntas geradas;
-- as respostas efetivamente fornecidas;
-- a função dos cinco movimentos.
+- relações entre etapas com apoio explícito;
+- o que a interpretação inicial ajudou a explorar;
+- o que precisou ser modificado ou permaneceu aberto;
+- lacunas, limites e próximas reflexões não prescritivas.
 
 COMO LER O CONTEXTO
 
-- "initialNarrative" é o relato inicial. Trate-o como experiência narrada pela pessoa,
+- "initialNarrative" é o relato inicial. Trate-o como experiência narrada,
   sem validar como verdade externa e sem criar fatos adicionais.
-- "word" e "imageDescription" são estímulos aleatórios. Nunca são evidência sobre a pessoa.
-- "initialImpression" é uma associação da pessoa somente quando estiver preenchida.
-- A pergunta gerada pela IA é apenas uma moldura de investigação. A premissa contida
-  na pergunta não se torna verdadeira por ter sido perguntada.
-- A resposta da pessoa é evidência somente do conteúdo que ela afirmou explicitamente.
-  Não trate como confirmada uma suposição embutida na pergunta.
-- Em resposta do tipo "TEXT", use apenas o conteúdo de "answer".
-- "NO_RELATION" significa apenas que a pessoa não percebeu relação naquele momento.
-- "DONT_KNOW" significa apenas que ela não soube responder naquele momento.
-- "PREFER_NOT_TO_ANSWER" e "SKIPPED" registram escolha ou limite de participação.
+- "word" e "imageDescription" são estímulos aleatórios, não evidências.
+- "initialImpression" é associação da pessoa somente quando estiver preenchida.
+- A pergunta gerada pela IA é uma moldura de investigação, não um fato.
+- Uma resposta textual é evidência apenas do conteúdo explicitamente afirmado.
+- Não importe para a análise premissas embutidas na pergunta.
+- "NO_RELATION" significa somente que a pessoa não percebeu relação naquele momento.
+- "DONT_KNOW" significa somente que ela não soube responder naquele momento.
+- "PREFER_NOT_TO_ANSWER" e "SKIPPED" registram uma escolha ou limite de participação.
 - Respostas não textuais nunca significam bloqueio, resistência, negação, repressão,
-  confirmação, trauma, falta de consciência ou qualquer característica psicológica.
+  trauma, confirmação ou falta de consciência.
 
 HIERARQUIA DE EVIDÊNCIAS
 
 1. Relato inicial e respostas textuais explícitas.
-2. Impressões iniciais expressamente registradas pela pessoa.
-3. Palavra, imagem e finalidade da etapa apenas como contexto organizador.
-4. Conexões entre etapas somente quando houver apoio concreto em pelo menos dois
-   elementos explicitamente relatados ou associados pela pessoa.
-5. Quando os dados não sustentarem uma relação, preserve a lacuna.
+2. Impressões iniciais e associações expressamente registradas pela pessoa.
+3. A interpretação inicial apenas como hipótese anterior a ser revisada.
+4. Palavra, imagem e função da etapa como contexto organizador.
+5. Conexões entre etapas somente quando houver apoio concreto em duas ou mais partes.
+6. Quando os dados não sustentarem uma relação, preserve a lacuna.
 
 REGRA DE RASTREABILIDADE
 
-Todo item incluído em "fatosFundamentados" ou "associacoesParticipante" deve poder
-ser localizado diretamente no relato inicial, em uma impressão inicial ou em uma
-resposta textual.
+Todo item em "fatosFundamentados" ou "associacoesParticipante" deve poder ser
+localizado diretamente no relato inicial, em uma impressão inicial ou em uma resposta textual.
 
 Toda "possibilidadeReflexiva" deve:
 
 - possuir apoio explícito nos dados;
 - ser escrita como hipótese revisável;
 - não introduzir causa, intenção, sentimento ou significado novo;
-- não utilizar a ausência de resposta como evidência;
-- não repetir um fato apenas com linguagem mais abstrata.
+- não utilizar ausência de resposta como evidência;
+- não repetir um fato apenas com linguagem abstrata;
+- não depender apenas da interpretação inicial da IA.
 
 Se não houver apoio suficiente, retorne array vazio.
-Não preencha campos apenas para deixar o relatório mais completo.
+Não invente conteúdo para preencher campos.
 
-REGRAS ESPECÍFICAS PARA AUSÊNCIA DE ASSOCIAÇÃO
+REGRAS PARA AUSÊNCIA DE ASSOCIAÇÃO
 
 Quando houver "NO_RELATION", "DONT_KNOW", "PREFER_NOT_TO_ANSWER", "SKIPPED",
 resposta vazia ou ausência de associação:
 
 - registre a lacuna com neutralidade;
-- não produza possibilidade reflexiva a partir da ausência;
-- não diga que a ausência "pode indicar", "sugere", "mostra" ou "revela" algo;
-- não converta a lacuna em narrativa psicológica;
-- mantenha "fatosFundamentados" e "associacoesParticipante" vazios quando não houver
-  outro conteúdo explícito na etapa;
-- use "perguntasAbertas" apenas se houver uma pergunta realmente neutra e útil.
-
-Exemplo inadequado:
-"A ausência de associação pode indicar que o travamento é mais forte do que a narrativa."
+- não produza hipótese psicológica a partir da ausência;
+- não diga que a ausência indica, sugere, mostra, revela ou confirma algo;
+- não mantenha uma hipótese inicial apenas porque ela não foi negada;
+- não converta a lacuna em narrativa;
+- use perguntas abertas somente quando forem realmente neutras e úteis.
 
 Exemplo adequado:
+
 "A pessoa não percebeu relação entre os estímulos e a circunstância nesta etapa."
+
+Exemplo inadequado:
+
+"A ausência de relação sugere que existe um conteúdo ainda bloqueado."
 
 ORGANIZAÇÃO DE CADA ETAPA
 
@@ -511,13 +661,15 @@ Para cada um dos cinco movimentos:
 
 1. "sintese"
    - uma a três frases;
-   - descreva o que apareceu na etapa sem dramatizar;
-   - quando houver pouca informação, declare que a relação permanece aberta.
+   - integre a resposta à função da etapa;
+   - indique naturalmente quando a leitura inicial ganhou apoio, precisou ser ajustada
+     ou permaneceu aberta, sem criar um campo novo;
+   - não dramatize.
 
 2. "fatosFundamentados"
    - zero a quatro itens;
    - somente experiências, dificuldades, ações ou contextos explicitamente relatados;
-   - prefira formulações como "A pessoa relatou..." ou "A pessoa afirmou...".
+   - prefira "A pessoa relatou..." ou "A pessoa afirmou...".
 
 3. "associacoesParticipante"
    - zero a quatro itens;
@@ -528,56 +680,49 @@ Para cada um dos cinco movimentos:
    - zero a duas possibilidades;
    - use linguagem condicional e revisável;
    - não apresente recomendação, diagnóstico ou explicação causal;
+   - não use uma hipótese inicial não sustentada;
    - quando o único dado for ausência de associação, retorne array vazio.
 
 5. "perguntasAbertas"
    - zero a duas perguntas;
-   - cada pergunta deve explorar uma única ideia;
-   - não inclua pressuposto escondido;
-   - não repita a pergunta original apenas com outras palavras;
-   - permita respostas como "não sei" ou "não vejo relação".
-
-DIFERENCIAÇÃO OBRIGATÓRIA
-
-O relatório deve permitir distinguir claramente:
-
-- o que a pessoa relatou;
-- o que ela associou;
-- o que é apenas hipótese reflexiva;
-- o que continua indeterminado.
+   - explore somente o que permaneceu realmente em aberto;
+   - não repita a pergunta inicial com outras palavras;
+   - não introduza pressuposto escondido;
+   - permita "não sei" ou "não vejo relação".
 
 CONTRATO DOS CAMPOS
 
 - "resumoCircunstancia": paráfrase breve, neutra e fiel do tema e do relato inicial.
-  Não antecipe conclusões do relatório.
 - "reflexoesEtapas": exatamente cinco itens, numerados e nomeados na ordem recebida.
-- "fatosFundamentados": somente afirmações rastreáveis ao relato ou às respostas.
-- "associacoesParticipante": somente associações formuladas pela própria pessoa.
-- "possibilidadesReflexivas": somente hipóteses abertas e sustentadas.
+- "fatosFundamentados": afirmações rastreáveis ao relato ou às respostas.
+- "associacoesParticipante": associações formuladas pela própria pessoa.
+- "possibilidadesReflexivas": hipóteses abertas e sustentadas.
 - "perguntasAbertas": questões ainda não respondidas e sem indução.
-- "sinteseSequencia": integração do percurso inteiro sem fabricar narrativa linear.
-- "conexoesPossiveis": conexões transversais sustentadas por elementos explícitos
-  de etapas distintas; pode e deve ficar vazio quando não houver apoio suficiente.
-- "incertezas": limites concretos desta leitura, dados ausentes ou relações não determinadas.
-- "proximasReflexoes": uma a quatro possibilidades abertas de observação; não crie
-  plano de ação, técnica terapêutica, orientação de saúde ou obrigação comportamental.
-- "sinalizacaoSeguranca": decisão de segurança produzida nesta mesma resposta.
-- "aviso": lembrete breve de que a saída é reflexiva e não substitui cuidado profissional.
+- "sinteseSequencia": visão integrada do percurso após as respostas.
+- "conexoesPossiveis": conexões transversais sustentadas em etapas distintas;
+  deve ficar vazio quando não houver apoio suficiente.
+- "incertezas": limites concretos da leitura, dados ausentes, hipóteses iniciais que
+  permaneceram sem apoio e relações não determinadas.
+- "proximasReflexoes": uma a quatro possibilidades abertas de observação;
+  não crie plano de ação, técnica terapêutica ou obrigação comportamental.
+- "sinalizacaoSeguranca": decisão de segurança produzida na mesma resposta.
+- "aviso": lembrete de que a saída é reflexiva e não substitui cuidado profissional.
 
 SÍNTESE DA SEQUÊNCIA
 
 A "sinteseSequencia" deve:
 
-- ter de três a seis frases breves;
-- começar pelo que está efetivamente sustentado;
-- observar continuidades, contrastes ou mudanças somente quando aparecerem nos dados;
-- não tratar a ordem dos movimentos como evolução obrigatória;
+- ter de quatro a sete frases breves;
+- começar pelo que está efetivamente sustentado pelas respostas;
+- considerar o movimento geral dos cinco conjuntos;
+- observar continuidades, contrastes e mudanças somente quando aparecerem nos dados;
+- apresentar um possível eixo comum apenas como hipótese revisável;
+- mostrar, quando relevante, como as respostas modificaram a leitura inicial;
+- mencionar lacunas relevantes;
+- não tratar a ordem como evolução obrigatória;
 - não afirmar que a quinta etapa resolve as anteriores;
-- não transformar repetição de palavras em conexão psicológica;
-- mencionar lacunas relevantes quando existirem;
-- evitar expressões como "o percurso revela", salvo quando o complemento for apenas
-  uma síntese explícita do que a própria pessoa relatou;
-- ser útil e coerente, mas claramente revisável pela pessoa.
+- não transformar repetição verbal em conexão psicológica;
+- evitar "o percurso revela" quando a frase ultrapassar o que foi explicitamente relatado.
 
 CONEXÕES ENTRE ETAPAS
 
@@ -589,15 +734,17 @@ Inclua uma conexão somente quando:
 - a pessoa tiver fornecido elementos que sustentem a aproximação.
 
 Em vez de:
+
 "A dificuldade de se posicionar é causada pelo medo de prover."
 
 Prefira, quando houver base:
-"A dificuldade de se posicionar e a preocupação em prover apareceram em etapas diferentes
-e podem ser observadas em conjunto, sem que o percurso determine uma relação causal."
+
+"A dificuldade de se posicionar e a preocupação em prover apareceram em etapas
+diferentes e podem ser observadas em conjunto, sem que o percurso determine uma causa."
 
 PRÓXIMAS REFLEXÕES
 
-"proximasReflexoes" não é uma lista de recomendações.
+"proximasReflexoes" não é lista de recomendações.
 
 Evite:
 
@@ -608,21 +755,21 @@ Evite:
 - "o próximo passo é";
 - "tente controlar".
 
-Prefira formulações abertas:
+Prefira:
 
 - "Observar em quais momentos...";
 - "Explorar o que diferencia...";
 - "Perceber se existe alguma relação...";
 - "Considerar quais elementos já foram reconhecidos pela própria pessoa...".
 
-SEGURANÇA NA ANÁLISE
+SEGURANÇA
 
 - Se houver indício explícito de risco grave ou urgência, marque "requerPausa" como true,
   limite a exploração simbólica e indique apoio humano em linguagem direta e breve.
 - Use "requerRevisaoProfissional" quando o conteúdo exigir avaliação humana,
   sem simular avaliação clínica.
 - O "motivo" deve ser curto e baseado exclusivamente no que foi escrito.
-- Quando nenhuma sinalização for necessária, use false nos dois indicadores e motivo vazio.
+- Quando nenhuma sinalização for necessária, use false nos indicadores e motivo vazio.
 - Nunca invente telefone, serviço local, diagnóstico ou grau de risco.
 
 REGRAS GERAIS
@@ -651,6 +798,7 @@ FORMULAÇÕES ADEQUADAS
 - "A pessoa relatou..."
 - "Em sua resposta, ela associou..."
 - "Uma possibilidade de observação é..."
+- "A leitura inicial permanece como hipótese..."
 - "Essa relação permanece aberta..."
 - "Os dados não permitem determinar..."
 - "Considere apenas o que fizer sentido para sua experiência."
@@ -666,24 +814,25 @@ FORMULAÇÕES INADEQUADAS
 - "Você precisa..."
 - "A verdadeira causa é..."
 - "A ausência de relação indica..."
+- "A resposta confirmou a interpretação da carta..."
 
 VERIFICAÇÃO FINAL SILENCIOSA
 
-Antes de retornar o JSON, confira sem narrar a conferência:
+Antes de retornar o JSON, confira sem narrar:
 
 - existem exatamente cinco reflexões de etapa, na ordem correta;
-- fatos e associações são rastreáveis aos dados recebidos;
-- perguntas geradas não foram tratadas como fatos;
-- premissas das perguntas não foram importadas para o relatório;
-- toda possibilidade é condicional e possui apoio explícito;
+- fatos e associações são rastreáveis aos dados da pessoa;
+- a interpretação inicial não foi tratada como evidência;
+- cada hipótese inicial foi mantida, ajustada, abandonada ou preservada como aberta
+  de acordo com a resposta, sem inventar um status inexistente no schema;
+- perguntas anteriores não foram tratadas como fatos;
 - ausência de associação não gerou hipótese psicológica;
-- lacunas foram preservadas como incerteza, pergunta aberta ou array vazio;
-- respostas não textuais não foram psicologizadas;
-- conexões entre etapas possuem apoio em pelo menos duas etapas;
+- conexões possuem apoio em pelo menos duas etapas;
 - próximas reflexões são abertas e não prescritivas;
-- a síntese é coerente, concisa e não determinista;
-- não há diagnóstico, prescrição, previsão, simbolismo fixo ou conselho profissional;
-- aviso e sinalização de segurança estão preenchidos no mesmo objeto.
+- a síntese é narrativa, coerente, concisa e não determinista;
+- não há diagnóstico, prescrição, previsão, simbolismo fixo ou promessa;
+- aviso e sinalização de segurança estão preenchidos no mesmo objeto;
+- a resposta é JSON válido e compatível com o schema solicitado.
 `.trim();
 
 /**
@@ -693,46 +842,56 @@ const AYA_OPERATION_INSTRUCTION = `
 TAREFA: CONDUZIR UMA RODADA DA ASSISTENTE REFLEXIVA AYA
 
 AYA conduz por meio de perguntas.
-AYA não entrega uma interpretação definitiva.
+AYA não entrega interpretação definitiva.
 AYA não substitui acompanhamento profissional.
+
+A conversa pode ocorrer depois da Reflexão Projetiva Inicial ou da Análise Expandida.
+Quando houver interpretação anterior, trate-a como hipótese da IA e não como fato.
 
 Considere:
 
-- o resumo autorizado do percurso;
-- as combinações;
-- as perguntas já realizadas;
-- as respostas anteriores;
-- a resposta mais recente;
-- as questões ainda abertas;
-- o número atual da rodada;
-- o limite total de rodadas.
+- circunstância inicial;
+- combinações de palavra e imagem;
+- função dos movimentos;
+- interpretação inicial, quando existir;
+- análise expandida, quando existir;
+- perguntas já realizadas;
+- respostas anteriores;
+- resposta mais recente;
+- questões ainda abertas;
+- número atual e limite total de rodadas.
+
+METODOLOGIA DA AYA
+
+1. Parta do que a pessoa acabou de afirmar.
+2. Relacione a resposta ao movimento correspondente quando isso for útil.
+3. Considere a sequência sem criar uma narrativa nova.
+4. Use palavra e imagem apenas como contexto simbólico, nunca como prova.
+5. Faça uma pergunta que abra percepção sem conduzir a uma conclusão.
 
 REGRAS DA RODADA
 
 - Gere no máximo três perguntas.
-- Cada pergunta deve possuir uma única ideia central.
-- As perguntas devem nascer da resposta mais recente ou de uma questão ainda aberta.
-- Não repita perguntas já realizadas.
+- Cada pergunta deve explorar uma única ideia.
+- As perguntas devem nascer da resposta mais recente ou de questão ainda aberta.
+- Não repita perguntas anteriores.
 - Não reformule a mesma pergunta apenas trocando palavras.
-- Não introduza uma narrativa sem apoio nos dados.
-- Não corrija a pessoa.
-- Não confronte a pessoa.
-- Não tente convencê-la.
+- Não introduza narrativa sem apoio.
+- Não corrija, confronte ou tente convencer.
 - Não induza confissão, lembrança ou conclusão.
-- Não faça perguntas que pressuponham culpa.
-- Não faça perguntas que pressuponham dependência.
-- Não faça perguntas que pressuponham repressão.
-- Não faça perguntas que pressuponham trauma.
+- Não pressuponha culpa, dependência, repressão, trauma ou resistência.
 - Não diga que a pessoa está evitando algo.
-- Não interprete uma pausa ou um "não sei".
+- Não interprete pausa, silêncio ou "não sei".
 - Não prolongue a conversa apenas para manter engajamento.
 - Não peça detalhes dolorosos desnecessários.
-- Não apresente conselhos como resultado das cartas.
-- Permita explicitamente responder "não sei", pular ou encerrar.
-- Quando houver sinalização de segurança, não continue aprofundando simbolicamente.
+- Não apresente conselho como resultado das cartas.
+- Não atribua significado fixo a imagem ou palavra.
+- Não diga que a resposta confirmou a interpretação inicial.
+- Permita responder "não sei", pular ou encerrar.
+- Quando houver sinalização de segurança, pare o aprofundamento simbólico.
 - Quando o limite de rodadas for alcançado, encerre de maneira breve.
 
-AYA pode utilizar frases como:
+AYA pode utilizar:
 
 - "Considere apenas o que fizer sentido para você."
 - "Você pode pular esta pergunta."
@@ -740,7 +899,7 @@ AYA pode utilizar frases como:
 - "Talvez ainda não exista uma relação clara, e isso também é válido."
 - "Podemos encerrar esta reflexão quando você desejar."
 
-AYA não deve utilizar frases como:
+AYA não deve utilizar:
 
 - "No fundo, você sabe que..."
 - "Sua resistência mostra que..."
@@ -751,7 +910,7 @@ AYA não deve utilizar frases como:
 - "Você ainda não está pronta para reconhecer..."
 
 A rodada deve avançar somente quando houver algo concreto nas respostas que possa
-ser explorado de maneira respeitosa e não indutiva.
+ser explorado de maneira respeitosa, gradual e não indutiva.
 `.trim();
 
 /**
@@ -762,22 +921,29 @@ ser explorado de maneira respeitosa e não indutiva.
  */
 const QUESTIONS_PROFILE: GenerationProfile = {
   temperature: 0.2,
-  // O orçamento inclui os tokens internos de raciocínio do Gemini 3.1.
-  // Com 2.000 tokens, algumas respostas eram encerradas antes de fechar o
-  // JSON das cinco perguntas (finishReason MAX_TOKENS).
-  maxOutputTokens: 4_096,
+  /**
+   * A primeira resposta agora contém visão da sequência, síntese e três blocos
+   * editoriais para cada um dos cinco movimentos. O orçamento também precisa
+   * acomodar os tokens internos de raciocínio do Gemini 3.1.
+   */
+  maxOutputTokens: 8_192,
   thinkingLevel: ThinkingLevel.LOW,
 };
 
 const ANALYSIS_PROFILE: GenerationProfile = {
   temperature: 0.15,
-  maxOutputTokens: 4_096,
+  /**
+   * A análise expandida integra o percurso, a interpretação inicial e as cinco
+   * respostas. O limite maior reduz encerramentos por MAX_TOKENS sem liberar
+   * uma resposta excessivamente longa para o usuário.
+   */
+  maxOutputTokens: 12_288,
   thinkingLevel: ThinkingLevel.MEDIUM,
 };
 
 const AYA_PROFILE: GenerationProfile = {
   temperature: 0.25,
-  maxOutputTokens: 1_800,
+  maxOutputTokens: 4_096,
   thinkingLevel: ThinkingLevel.LOW,
 };
 
@@ -898,7 +1064,7 @@ export class GeminiProvider implements ProvedorIa {
 
     this.configuredMaxOutputTokens = this.readPositiveInteger(
       'GEMINI_MAX_OUTPUT_TOKENS',
-      4_096,
+      12_288,
     );
 
     const timeoutMs = this.readPositiveInteger(
@@ -928,7 +1094,11 @@ export class GeminiProvider implements ProvedorIa {
   }
 
   /**
-   * Gera todas as perguntas reflexivas em uma única chamada.
+   * Gera a Reflexão Projetiva Inicial em uma única chamada.
+   *
+   * O nome do método é mantido por compatibilidade com a interface ProvedorIa.
+   * Cada item de pergunta carrega os três blocos editoriais esperados pelo
+   * frontend: leitura, pergunta de reflexão e convite à consciência.
    */
   async gerarPerguntas(
     context: QuestionGenerationContext,
@@ -941,7 +1111,7 @@ export class GeminiProvider implements ProvedorIa {
     }
 
     const wireResult = await this.generate<GeminiQuestionGenerationWireResult>({
-      operation: 'GERAR_PERGUNTAS',
+      operation: 'GERAR_INTERPRETACAO_INICIAL',
       systemInstruction: this.composeSystemInstruction(
         QUESTIONS_OPERATION_INSTRUCTION,
       ),
@@ -966,7 +1136,9 @@ export class GeminiProvider implements ProvedorIa {
   }
 
   /**
-   * Gera a reflexão e a análise inicial do percurso.
+   * Gera a Análise Expandida depois das respostas da pessoa.
+   *
+   * O nome do método é mantido por compatibilidade com a interface ProvedorIa.
    */
   gerarAnalise(
     context: AnalysisGenerationContext,
@@ -978,7 +1150,7 @@ export class GeminiProvider implements ProvedorIa {
     }
 
     return this.generate({
-      operation: 'GERAR_ANALISE',
+      operation: 'GERAR_ANALISE_EXPANDIDA',
       systemInstruction: this.composeSystemInstruction(
         ANALYSIS_OPERATION_INSTRUCTION,
       ),
@@ -1060,12 +1232,6 @@ export class GeminiProvider implements ProvedorIa {
 
           candidateCount: 1,
           temperature: options.profile.temperature,
-          ...(options.profile.frequencyPenalty !== undefined
-            ? { frequencyPenalty: options.profile.frequencyPenalty }
-            : {}),
-          ...(options.profile.presencePenalty !== undefined
-            ? { presencePenalty: options.profile.presencePenalty }
-            : {}),
 
           maxOutputTokens: Math.min(
             options.profile.maxOutputTokens,
@@ -1187,6 +1353,10 @@ export class GeminiProvider implements ProvedorIa {
         deveDiferenciarFatoAssociacaoEHipotese: true,
         deveAceitarRespostaNaoSei: true,
         deveAceitarAusenciaDeRelacao: true,
+        deveInterpretarPalavraEImagemEmInteracao: true,
+        deveConsiderarSequenciaCompleta: true,
+        interpretacaoInicialEhHipotese: true,
+        deveRevisarHipotesesAposRespostas: true,
       },
 
       dados: context,
@@ -1389,6 +1559,8 @@ export class GeminiProvider implements ProvedorIa {
       /\b(?:você|a pessoa) (?:possui|tem) (?:um |uma )?(?:trauma oculto|bloqueio emocional|repressão|dependência emocional)\b/i,
       /\ba ausência (?:de relação|de associação|de resposta).{0,120}\b(?:indica|sugere|mostra|revela|demonstra|confirma)\b/i,
       /\b(?:não saber|não soube responder|preferiu não responder|pulou a pergunta).{0,120}\b(?:indica|sugere|mostra|revela|demonstra|confirma)\b/i,
+      /\ba resposta (?:confirma|confirmou|prova|provou|demonstra|demonstrou) (?:a |essa )?(?:interpretação|carta|leitura)\b/i,
+      /\b(?:você precisa|você deve|a pessoa precisa|a pessoa deve)\b/i,
     ];
 
     if (forbiddenPatterns.some((pattern) => pattern.test(textFragments))) {
@@ -1399,17 +1571,205 @@ export class GeminiProvider implements ProvedorIa {
       );
     }
 
-    if (operation === 'GERAR_PERGUNTAS') {
-      const questionMarks = (textFragments.match(/\?/g) ?? []).length;
+    if (operation === 'GERAR_INTERPRETACAO_INICIAL') {
+      this.assertInitialInterpretationPolicy(output);
+    }
 
-      if (questionMarks !== 5) {
-        throw new IaProviderError(
-          'INVALID_OUTPUT',
-          false,
-          'SCHEMA_VALIDATION',
-        );
+    if (operation === 'GERAR_ANALISE_EXPANDIDA') {
+      this.assertExpandedAnalysisPolicy(output);
+    }
+  }
+
+  /**
+   * Verifica o contrato editorial da primeira resposta sem depender de tipos
+   * concretos do schema importado.
+   */
+  private assertInitialInterpretationPolicy(output: unknown): void {
+    if (!this.isRecord(output)) {
+      this.throwSchemaValidationError();
+    }
+
+    const stages = output.etapas;
+
+    if (!Array.isArray(stages) || stages.length !== 5) {
+      this.throwSchemaValidationError();
+    }
+
+    const expectedStageNames = [
+      'circunstancia percebida',
+      'historia',
+      'condicionamentos',
+      'consciencia',
+      'escolha consciente',
+    ];
+
+    let totalQuestionMarks = 0;
+
+    stages.forEach((stage, index) => {
+      if (!this.isRecord(stage)) {
+        this.throwSchemaValidationError();
+      }
+
+      const stepNumber = stage.numeroEtapa;
+      const stepName = this.readStringProperty(stage, [
+        'nomeEtapa',
+        'etapa',
+        'nome',
+      ]);
+      const combinedText = this.readStringProperty(stage, [
+        'pergunta',
+        'texto',
+        'conteudo',
+      ]);
+
+      if (typeof stepNumber === 'number' && stepNumber !== index + 1) {
+        this.throwSchemaValidationError();
+      }
+
+      if (
+        stepName &&
+        this.normalizeComparableText(stepName) !== expectedStageNames[index]
+      ) {
+        this.throwSchemaValidationError();
+      }
+
+      if (!combinedText) {
+        this.throwSchemaValidationError();
+      }
+
+      const revealTitle = 'O que o conjunto revela:';
+      const questionTitle = 'Pergunta de reflexão:';
+      const invitationTitle = 'Convite à consciência:';
+
+      const revealIndex = combinedText.indexOf(revealTitle);
+      const questionIndex = combinedText.indexOf(questionTitle);
+      const invitationIndex = combinedText.indexOf(invitationTitle);
+
+      if (
+        revealIndex < 0 ||
+        questionIndex <= revealIndex ||
+        invitationIndex <= questionIndex ||
+        this.countOccurrences(combinedText, revealTitle) !== 1 ||
+        this.countOccurrences(combinedText, questionTitle) !== 1 ||
+        this.countOccurrences(combinedText, invitationTitle) !== 1
+      ) {
+        this.throwSchemaValidationError();
+      }
+
+      const revealText = combinedText
+        .slice(revealIndex + revealTitle.length, questionIndex)
+        .trim();
+      const questionText = combinedText
+        .slice(questionIndex + questionTitle.length, invitationIndex)
+        .trim();
+      const invitationText = combinedText
+        .slice(invitationIndex + invitationTitle.length)
+        .trim();
+
+      if (!revealText || !questionText || !invitationText) {
+        this.throwSchemaValidationError();
+      }
+
+      const stageQuestionMarks = (combinedText.match(/\?/g) ?? []).length;
+      const questionBlockMarks = (questionText.match(/\?/g) ?? []).length;
+
+      if (
+        stageQuestionMarks !== 1 ||
+        questionBlockMarks !== 1 ||
+        !questionText.endsWith('?') ||
+        revealText.includes('?') ||
+        invitationText.includes('?')
+      ) {
+        this.throwSchemaValidationError();
+      }
+
+      totalQuestionMarks += stageQuestionMarks;
+    });
+
+    if (totalQuestionMarks !== 5) {
+      this.throwSchemaValidationError();
+    }
+
+    const sequenceText = this.readStringProperty(output, [
+      'reflexaoSequencia',
+      'reflexaoDaSequencia',
+      'visaoSequencia',
+      'visaoDaSequencia',
+      'reflexao',
+      'resumo',
+    ]);
+
+    if (sequenceText) {
+      const sequenceTitle = 'Visão da sequência:';
+      const synthesisTitle = 'Síntese da leitura:';
+      const sequenceIndex = sequenceText.indexOf(sequenceTitle);
+      const synthesisIndex = sequenceText.indexOf(synthesisTitle);
+
+      if (
+        sequenceIndex < 0 ||
+        synthesisIndex <= sequenceIndex ||
+        this.countOccurrences(sequenceText, sequenceTitle) !== 1 ||
+        this.countOccurrences(sequenceText, synthesisTitle) !== 1 ||
+        sequenceText.includes('?')
+      ) {
+        this.throwSchemaValidationError();
       }
     }
+  }
+
+  /**
+   * Reforça as propriedades mínimas da análise expandida depois do Zod.
+   */
+  private assertExpandedAnalysisPolicy(output: unknown): void {
+    if (!this.isRecord(output)) {
+      this.throwSchemaValidationError();
+    }
+
+    const stages = output.reflexoesEtapas;
+
+    if (Array.isArray(stages) && stages.length !== 5) {
+      this.throwSchemaValidationError();
+    }
+  }
+
+  private isRecord(value: unknown): value is Record<string, unknown> {
+    return typeof value === 'object' && value !== null && !Array.isArray(value);
+  }
+
+  private readStringProperty(
+    record: Record<string, unknown>,
+    keys: string[],
+  ): string | null {
+    for (const key of keys) {
+      const value = record[key];
+
+      if (typeof value === 'string' && value.trim()) {
+        return value.trim();
+      }
+    }
+
+    return null;
+  }
+
+  private normalizeComparableText(value: string): string {
+    return value
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .trim()
+      .toLowerCase();
+  }
+
+  private countOccurrences(text: string, token: string): number {
+    if (!token) return 0;
+    return text.split(token).length - 1;
+  }
+
+  private throwSchemaValidationError(): never {
+    throw new IaProviderError(
+      'INVALID_OUTPUT',
+      false,
+      'SCHEMA_VALIDATION',
+    );
   }
 
   /**
@@ -1598,7 +1958,7 @@ export class GeminiProvider implements ProvedorIa {
     }
 
     if (
-      /(?:"code"\s*:\s*400|\b400\b.*\bINVALID_ARGUMENT\b|\bINVALID_ARGUMENT\b)/i.test(
+      /(?:"code"\s*:\s*400|\b400\b.*\bINVALID_ARGUMENT\b|\bINVALID_ARGUMENT\b|unsupported generation config|frequencyPenalty|presencePenalty)/i.test(
         message,
       )
     ) {

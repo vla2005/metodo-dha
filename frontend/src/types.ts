@@ -63,6 +63,19 @@ export interface QuestionsSnapshot {
   generationStatus: 'AVAILABLE' | 'ANSWERS_COMPLETED';
   generationMode: 'DEMO' | 'GEMINI';
   reflectionSequence: string;
+  initialInterpretation?: {
+    sequenceView: string;
+    movements: Array<{
+      stepNumber: number;
+      stepName: string;
+      whatTheSetReveals: string;
+      reflectionQuestion: string;
+      consciousnessInvitation: string;
+      questionId: string | null;
+    }>;
+    initialSynthesis: string;
+    disclaimer: string;
+  };
   questions: ReflectiveQuestion[];
   safety: {
     requiresPause: boolean;

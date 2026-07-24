@@ -13,6 +13,7 @@ export interface InitialInterpretation {
   sequenceView: string;
   movements: InitialMovementInterpretation[];
   initialSynthesis: string;
+  disclaimer: string;
   hasExpandedContent: boolean;
 }
 
@@ -44,7 +45,7 @@ export function adaptInitialInterpretation(snapshot: QuestionsSnapshot): Initial
           question.stageName ??
           `Movimento ${stepNumber}`,
         reveals:
-          readString(enriched, ['reveals', 'oQueOConjuntoRevela']) ??
+          readString(enriched, ['whatTheSetReveals', 'reveals', 'oQueOConjuntoRevela']) ??
           parsed.reveals,
         reflectionQuestion:
           readString(enriched, ['reflectionQuestion', 'perguntaDeReflexao', 'pergunta']) ??
@@ -57,21 +58,57 @@ export function adaptInitialInterpretation(snapshot: QuestionsSnapshot): Initial
       };
     });
 
+  const sequence = splitSequenceContent(
+    readString(nested, ['sequenceView']) ??
+      readString(raw, [
+        'visaoSequencia',
+        'visaoDaSequencia',
+        'reflexaoSequencia',
+        'reflexaoDaSequencia',
+        'reflexao',
+        'resumo'
+      ]) ??
+      snapshot.reflectionSequence
+  );
   const initialSynthesis =
     readString(nested, ['initialSynthesis']) ??
     readString(raw, ['sinteseInicial']) ??
-    '';
+    sequence.initialSynthesis;
 
   return {
-    sequenceView:
-      readString(nested, ['sequenceView']) ??
-      readString(raw, ['visaoSequencia']) ??
-      snapshot.reflectionSequence,
+    sequenceView: sequence.sequenceView,
     movements,
     initialSynthesis,
+    disclaimer:
+      readString(nested, ['disclaimer']) ??
+      readString(raw, ['disclaimer', 'aviso']) ??
+      snapshot.notice,
     hasExpandedContent: movements.every(
       (movement) => movement.reveals && movement.consciousnessInvitation
     )
+  };
+}
+
+function splitSequenceContent(text: string): {
+  sequenceView: string;
+  initialSynthesis: string;
+} {
+  const viewTitle = /(?:^|\n)\s*Vis[aã]o da sequ[eê]ncia\s*:?\s*(?:\n|$)/iu;
+  const synthesisTitle = /(?:^|\n)\s*S[ií]ntese da leitura\s*:?\s*(?:\n|$)/iu;
+  const viewMatch = viewTitle.exec(text);
+  const synthesisMatch = synthesisTitle.exec(text);
+
+  if (!viewMatch || !synthesisMatch || viewMatch.index >= synthesisMatch.index) {
+    return { sequenceView: text.trim(), initialSynthesis: '' };
+  }
+
+  return {
+    sequenceView: text
+      .slice(viewMatch.index + viewMatch[0].length, synthesisMatch.index)
+      .trim(),
+    initialSynthesis: text
+      .slice(synthesisMatch.index + synthesisMatch[0].length)
+      .trim()
   };
 }
 

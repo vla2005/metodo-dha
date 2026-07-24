@@ -56,10 +56,15 @@ const safetySignalSchema = z.object({
   motivo: z.string().trim().max(800),
 }).strict();
 
+const initialInterpretationMovementContentSchema = z.string()
+  .trim()
+  .min(1)
+  .max(2400);
+
 const generatedStepQuestionsSchema = z.object({
   numeroEtapa: stepNumberSchema,
   nomeEtapa: z.enum(DHA_STEP_NAMES),
-  perguntas: z.array(z.string().trim().min(1).max(500)).length(1),
+  perguntas: z.array(initialInterpretationMovementContentSchema).length(1),
 }).strict();
 
 const legacyGeneratedStepQuestionsSchema = z.object({
@@ -124,7 +129,7 @@ function validateQuestionResult(
 }
 
 export const questionGenerationSchema = z.object({
-  reflexaoSequencia: z.string().trim().min(1).max(1200),
+  reflexaoSequencia: z.string().trim().min(1).max(2400),
   etapas: z.array(generatedStepQuestionsSchema).length(5),
   perguntasIntegradoras: z.array(z.string().trim().min(1).max(500)).length(0),
   sinalizacaoSeguranca: safetySignalSchema,
@@ -151,11 +156,11 @@ export const persistedQuestionGenerationSchema = z.union([
 const geminiGeneratedStepQuestionWireSchema = z.object({
   numeroEtapa: stepNumberSchema,
   nomeEtapa: z.enum(DHA_STEP_NAMES),
-  pergunta: z.string().trim().min(1).max(500),
+  pergunta: initialInterpretationMovementContentSchema,
 }).strict();
 
 export const geminiQuestionGenerationWireSchema = z.object({
-  reflexaoSequencia: z.string().trim().min(1).max(1200),
+  reflexaoSequencia: z.string().trim().min(1).max(2400),
   etapas: z.array(geminiGeneratedStepQuestionWireSchema).length(5),
   sinalizacaoSeguranca: safetySignalSchema,
   aviso: z.string().trim().min(1).max(700),
@@ -211,8 +216,8 @@ export function normalizeGeminiQuestionGenerationWireResult(
 
 const QUESTION_WIRE_STEP_SCHEMAS = DHA_STEP_NAMES.map((name, index) => ({
   type: 'object',
-  title: `Pergunta da etapa ${index + 1}`,
-  description: 'Uma única pergunta reflexiva vinculada à etapa indicada.',
+  title: `Reflexão projetiva do movimento ${index + 1}`,
+  description: 'Leitura, pergunta e convite concatenados para a etapa indicada.',
   additionalProperties: false,
   propertyOrdering: ['numeroEtapa', 'nomeEtapa', 'pergunta'],
   required: ['numeroEtapa', 'nomeEtapa', 'pergunta'],
@@ -229,15 +234,15 @@ const QUESTION_WIRE_STEP_SCHEMAS = DHA_STEP_NAMES.map((name, index) => ({
     },
     pergunta: {
       type: 'string',
-      description: 'Pergunta aberta, breve, neutra e não diagnóstica.',
+      description: 'Três blocos editoriais: leitura simbólica, uma pergunta e convite à consciência.',
     },
   },
 }));
 
 export const QUESTION_GENERATION_JSON_SCHEMA = {
   type: 'object',
-  title: 'Perguntas reflexivas do Método DHA',
-  description: 'Contrato wire da Gemini com exatamente uma pergunta para cada etapa.',
+  title: 'Reflexão Projetiva Inicial do Método DHA',
+  description: 'Contrato compatível com cinco leituras iniciais, cada uma contendo uma pergunta.',
   additionalProperties: false,
   propertyOrdering: [
     'reflexaoSequencia',
@@ -254,11 +259,11 @@ export const QUESTION_GENERATION_JSON_SCHEMA = {
   properties: {
     reflexaoSequencia: {
       type: 'string',
-      description: 'Contextualização breve da sequência, sem formular perguntas.',
+      description: 'Visão da sequência e síntese inicial em dois blocos editoriais.',
     },
     etapas: {
       type: 'array',
-      description: 'Cinco itens fixos e ordenados, um para cada etapa.',
+      description: 'Cinco interpretações fixas e ordenadas, uma para cada movimento.',
       prefixItems: QUESTION_WIRE_STEP_SCHEMAS,
       minItems: 5,
       maxItems: 5,
@@ -335,12 +340,28 @@ const analysisStepContextSchema = z.object({
   questions: z.array(analysisQuestionContextSchema).min(1).max(2),
 }).strict();
 
+const analysisInitialInterpretationMovementSchema = z.object({
+  stepNumber: stepNumberSchema,
+  stepName: z.enum(DHA_STEP_NAMES),
+  whatTheSetReveals: z.string().trim().max(2400),
+  reflectionQuestion: z.string().trim().min(1).max(500),
+  consciousnessInvitation: z.string().trim().max(1200),
+}).strict();
+
+const analysisInitialInterpretationSchema = z.object({
+  sequenceView: z.string().trim().min(1).max(2400),
+  movements: z.array(analysisInitialInterpretationMovementSchema).length(5),
+  initialSynthesis: z.string().trim().max(2400),
+  disclaimer: z.string().trim().max(900),
+}).strict();
+
 export const analysisGenerationContextSchema = z.object({
   theme: z.string().trim().min(1).max(120),
   initialNarrative: z.string().trim().min(1).max(5000),
   catalogVersion: z.string().trim().min(1).max(40),
   steps: z.array(analysisStepContextSchema).length(5),
   integrativeQuestions: z.array(analysisQuestionContextSchema).max(2),
+  initialInterpretation: analysisInitialInterpretationSchema.optional(),
 }).strict().superRefine((context, refinement) => {
   const displayOrders = new Set<number>();
   context.steps.forEach((step, index) => {
@@ -379,6 +400,18 @@ export const analysisGenerationContextSchema = z.object({
       });
     }
     displayOrders.add(question.displayOrder);
+  });
+  context.initialInterpretation?.movements.forEach((movement, index) => {
+    if (
+      movement.stepNumber !== index + 1 ||
+      movement.stepName !== DHA_STEP_NAMES[index]
+    ) {
+      refinement.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['initialInterpretation', 'movements', index],
+        message: 'A interpretação inicial deve preservar a ordem dos cinco movimentos.',
+      });
+    }
   });
 });
 
